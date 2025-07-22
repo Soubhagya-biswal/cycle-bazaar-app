@@ -1,0 +1,257 @@
+/* client/src/App.css ke end mein add karein */
+
+.cycle-card {
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 20px;
+  width: 300px;
+  background-color: #1e1e1e; /* Thoda lighter black */
+  text-align: center;
+  /* Naya code - Shadow aur Transition ke liye */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  color: white;
+}
+.cycle-card:hover {
+  transform: translateY(-10px); /* Card upar uthega */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
+}
+
+.cycle-image {
+  width: 100%; /* Card ki poori width le lega */
+  height: 200px; /* Ek fixed height de di */
+  object-fit: cover; /* Image ko stretch kiye bina fit karega */
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+/* client/src/App.css */
+
+.cycle-list {
+  display: flex; /* Flexbox activate karta hai */
+  flex-wrap: wrap; /* Agar screen choti ho toh cards neeche aa jayenge */
+  justify-content: center; /* Saare cards ko center mein rakhta hai */
+  gap: 30px; /* Cards ke beech mein space deta hai */
+  padding: 20px;
+}
+/* client/src/App.css ke end mein add karein */
+
+.details-btn {
+  background-color: #61dafb; /* React ka neela color */
+  color: #1e1e1e;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 15px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.details-btn:hover {
+  background-color: #ffffff;
+  color: #000000;
+}
+.navbar {
+  background-color: #1e1e1e;
+  padding: 15px 30px;
+  display: flex;
+  gap: 20px;
+  border-bottom: 2px solid #61dafb;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.nav-link:hover {
+  color: #61dafb;
+}
+/* client/src/App.css ke end mein add karein */
+
+.admin-container {
+  padding: 20px;
+  color: white;
+  text-align: center;
+}
+
+.add-cycle-form {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.add-cycle-form h2 {
+  color: #61dafb;
+}
+
+.add-cycle-form input {
+  width: 95%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #444;
+  background-color: #282c34;
+  color: white;
+  font-size: 16px;
+}
+
+.add-cycle-form button {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: #61dafb;
+  color: #1e1e1e;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-cycle-form button:hover {
+  background-color: #ffffff;
+}
+/* client/src/App.css ke end mein add karein */
+
+.admin-cycle-list {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.admin-cycle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #444;
+  color: white;
+}
+
+.admin-cycle-item:last-child {
+  border-bottom: none;
+}
+
+.delete-btn {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #cc0000;
+}
+.admin-cycle-item > div {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-btn {
+  background-color: #f0ad4e;
+  color: white;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-weight: bold;
+  font-size: 14px; /* button ke text size ke barabar */
+  transition: background-color 0.3s ease;
+}
+
+.edit-btn:hover {
+  background-color: #ec971f;
+}
+/* Login aur Register Form ki Styling */
+
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh; /* Form ko page ke center mein laane ke liye */
+}
+
+.form-box {
+  background-color: #1e1e1e;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 500px; /* Form ki max width set ki */
+  border: 1px solid #333;
+}
+
+.form-box h1 {
+  color: white;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+/* Form ke input fields ki styling */
+.form-box .form-control {
+  background-color: #282c34;
+  color: white;
+  border: 1px solid #444;
+  padding: 12px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* User interactive part: Jab user input par click karega */
+.form-box .form-control:focus {
+  background-color: #282c34;
+  color: white;
+  border-color: #61dafb; /* React ka neela color */
+  box-shadow: 0 0 10px rgba(97, 218, 251, 0.5); /* Neela glow effect */
+}
+
+/* Form ke button ki styling */
+.form-box .btn-primary {
+  background-color: #61dafb;
+  border: none;
+  font-weight: bold;
+  padding: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.form-box .btn-primary:hover {
+  background-color: #ffffff;
+  color: #000;
+}
+/* Register/Login form ke labels ka color theek karne ke liye */
+.form-box .form-label {
+  color: #f0f0f0; /* Light gray color jo white jaisa lagega */
+  text-align: left;
+  display: block;
+  width: 100%;
+}
+/* Form ke neeche wale text ka color theek karne ke liye */
+.form-box p {
+  color: #a0a0a0; /* Thoda halka gray color */
+}
+
+/* Link ka color alag se set karna */
+.form-box p a {
+  color: #61dafb; /* React ka neela color */
+  text-decoration: none;
+}
+
+.form-box p a:hover {
+    text-decoration: underline;
+}
+/* Payment page ke radio button labels ka color theek karne ke liye */
+.form-box .form-check-label {
+  color: #f0f0f0;
+}
