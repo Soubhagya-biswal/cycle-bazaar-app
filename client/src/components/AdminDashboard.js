@@ -21,9 +21,11 @@ function AdminDashboard() {
   });
 
   useEffect(() => {
-    fetchCycles();
-    fetchOrders();
-  }, []);
+    if (userInfo) {
+      fetchCycles();
+      fetchOrders();
+    }
+  }, [userInfo]); // Dependency mein userInfo add kiya
 
   const fetchCycles = () => {
     fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/`)
@@ -31,7 +33,8 @@ function AdminDashboard() {
       .then(data => setCycles(data.cycles))
       .catch(err => console.error('Error fetching cycles:', err));
   };
-     const fetchOrders = () => {
+  const fetchOrders = () => {
+       if (!userInfo) return;
     fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders`, {
         headers: { 'Authorization': `Bearer ${userInfo.token}` }
     })
@@ -68,23 +71,25 @@ function AdminDashboard() {
 
   const deleteCycle = (id) => {
     if (window.confirm('Are you sure you want to delete this cycle?')) {
-      fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/${id}`, {
+      fetch(`http://localhost:5000/cycles/${id}`, {
         method: 'DELETE',
+        // YEH HEADERS ADD KARNE HAIN
         headers: {
+          'Authorization': `Bearer ${userInfo.token}`,
         },
       })
       .then(res => {
-        if (res.ok) { 
-          return res.json(); 
+        if (res.ok) {
+          return res.json();
         } else {
-          throw new Error('Failed to delete cycle: ' + res.statusText);
+          throw new Error('Failed to delete cycle');
         }
       })
       .then(data => {
-        alert(data.message); 
+        alert(data.message);
         fetchCycles();
       })
-      .catch(err => alert('Error deleting cycle: ' + err.message)); 
+      .catch(err => alert(`Error: ${err.message}`));
     }
   };
        const handleCancellationAction = async (orderId, action) => {

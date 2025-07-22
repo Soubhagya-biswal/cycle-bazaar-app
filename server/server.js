@@ -1,5 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config(); // Moved to the top to load variables first
+
 import cors from 'cors';
 import mongoose from 'mongoose';
 
@@ -7,9 +9,7 @@ import mongoose from 'mongoose';
 import cycleRouter from './routes/cycles.js';
 import userRouter from './routes/users.js';
 import cartRouter from './routes/cart.js';
-import orderRoutes from './routes/orderRoutes.js'; // Naya order route
-
-dotenv.config();
+import orderRoutes from './routes/orderRoutes.js';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -27,11 +27,11 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/cycles', cycleRouter);
 app.use('/api/users', userRouter);
 app.use('/api/cart', cartRouter);
-app.use('/api/orders', orderRoutes); // Naya order route
+app.use('/api/orders', orderRoutes);
 
 // Test route
 app.get('/', (req, res) => {
-  res.send('Cycle Bazaar Backend is running and connected to DB!');
+  res.send('Cycle Bazaar Backend is running!');
 });
 
 app.listen(port, () => {
