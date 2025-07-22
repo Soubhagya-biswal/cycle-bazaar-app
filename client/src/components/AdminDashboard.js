@@ -71,7 +71,7 @@ function AdminDashboard() {
 
   const deleteCycle = (id) => {
     if (window.confirm('Are you sure you want to delete this cycle?')) {
-      fetch(`http://localhost:5000/cycles/${id}`, {
+      fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/${id}`, {
         method: 'DELETE',
         // YEH HEADERS ADD KARNE HAIN
         headers: {
