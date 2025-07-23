@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-dotenv.config(); // Moved to the top to load variables first
+dotenv.config();
 
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -14,8 +14,13 @@ import orderRoutes from './routes/orderRoutes.js';
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// NAYA, ZYADA SPECIFIC CORS CONFIGURATION
+const corsOptions = {
+  origin: process.env.FRONTEND_URL, // Sirf aapke live frontend URL ko allow karega
+  optionsSuccessStatus: 200 
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // MongoDB Connection
@@ -28,11 +33,6 @@ app.use('/cycles', cycleRouter);
 app.use('/api/users', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRoutes);
-
-// Test route
-app.get('/', (req, res) => {
-  res.send('Cycle Bazaar Backend is running!');
-});
 
 app.listen(port, () => {
   console.log(`Server successfully started on port ${port}`);
