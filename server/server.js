@@ -15,10 +15,20 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // NAYA, ZYADA SPECIFIC CORS CONFIGURATION
+// NAYA, FLEXIBLE CORS CONFIGURATION
+const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:3000'];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL, // Sirf aapke live frontend URL ko allow karega
-  optionsSuccessStatus: 200 
+  origin: function (origin, callback) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
 
 app.use(express.json());
