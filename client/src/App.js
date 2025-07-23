@@ -22,6 +22,8 @@ import MyOrdersScreen from './components/MyOrdersScreen';
 import WishlistPage from './components/WishlistPage';
 import OrderListScreen from './components/OrderListScreen'; 
 import UserListScreen from './components/UserListScreen';
+import ProfilePage from './components/ProfilePage.js';
+import AddressPage from './components/AddressPage';
 
 function App() {
   return (
@@ -45,6 +47,8 @@ function App() {
             <Route path="/edit/:id" element={<EditCycle />} /> 
 
             {/* User/Auth Routes */}
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/address" element={<AddressPage />} />
             <Route path="/shipping" element={<ShippingPage />} />
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/placeorder" element={<PlaceOrderPage />} />

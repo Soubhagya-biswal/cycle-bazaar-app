@@ -1,16 +1,47 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
 
 function ShippingPage() {
     const { shippingAddress, saveShippingAddress } = useContext(CartContext);
+    const { userInfo } = useContext(AuthContext);
     
     // Initialize state with address from context (which is from localStorage)
     const [address, setAddress] = useState(shippingAddress.address || '');
     const [city, setCity] = useState(shippingAddress.city || '');
     const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || '');
     const [country, setCountry] = useState(shippingAddress.country || '');
+    useEffect(() => {
+        // Agar user ne checkout ke dauraan address pehle se daal rakha hai, to use mat badlo
+        if (shippingAddress.address) {
+            return;
+        }
+
+        // Varna, user ke profile se default address laane ki koshish karo
+        const fetchUserAddress = async () => {
+            if (userInfo) {
+                try {
+                    const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/address`, {
+                        headers: { 'Authorization': `Bearer ${userInfo.token}` }
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.address) {
+                        // Agar profile mein address milta hai, to form ko usse bhar do
+                        setAddress(data.address);
+                        setCity(data.city);
+                        setPostalCode(data.postalCode);
+                        setCountry(data.country);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch user's default address", err);
+                }
+            }
+        };
+
+        fetchUserAddress();
+    }, [userInfo, shippingAddress]);
     
     const navigate = useNavigate();
 

@@ -14,7 +14,14 @@ wishlist: [
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Cycle'
   }
-]
+    ]
+, // <-- wishlist field ke baad comma
+shippingAddress: {
+  address: { type: String },
+  city: { type: String },
+  postalCode: { type: String },
+  country: { type: String },
+}
 }, {
     timestamps: true
 });
