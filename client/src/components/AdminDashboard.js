@@ -11,6 +11,7 @@ function AdminDashboard() {
 
   const [cycles, setCycles] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [formData, setFormData] = useState({
     brand: '',
     model: '',
@@ -26,7 +27,17 @@ function AdminDashboard() {
       fetchOrders();
     }
   }, [userInfo]); // Dependency mein userInfo add kiya
-
+    useEffect(() => {
+        // Saare cycles se reviews ko nikal kar ek flat list banayein
+        const allReviews = cycles.flatMap(cycle => 
+            cycle.reviews.map(review => ({
+                ...review,
+                cycleId: cycle._id,
+                cycleName: `${cycle.brand} ${cycle.model}`
+            }))
+        );
+        setReviews(allReviews);
+    }, [cycles]);
   const fetchCycles = () => {
     fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/`)
       .then(res => res.json())
@@ -110,7 +121,22 @@ function AdminDashboard() {
         alert(`Error: ${error.message}`);
     }
   };
-  
+    const deleteReviewHandler = async (cycleId, reviewId) => {
+        if (window.confirm('Are you sure you want to delete this review?')) {
+            try {
+                // THE URL IS FIXED IN THIS LINE
+                const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/${cycleId}/reviews/${reviewId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${userInfo.token}` }
+                });
+                if (!res.ok) throw new Error('Failed to delete review');
+                alert('Review deleted successfully');
+                fetchCycles(); // Re-fetch cycles to update the reviews list
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+    };
   const cancellationRequests = orders.filter(order => order.status === 'Cancellation Requested');
   return (
     <div className="admin-container">
@@ -164,6 +190,42 @@ function AdminDashboard() {
           <p>No pending cancellation requests.</p>
         )}
       </div>
+      {/* NAYA SECTION: Manage Reviews */}
+            <div className="admin-reviews-list mt-5">
+                <h2>Manage Reviews ({reviews.length})</h2>
+                {reviews.length > 0 ? (
+                    <Table striped bordered hover responsive variant="dark">
+                        <thead>
+                            <tr>
+                                <th>Review ID</th>
+                                <th>Product</th>
+                                <th>User</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {reviews.map(review => (
+                                <tr key={review._id}>
+                                    <td>{review._id}</td>
+                                    <td>{review.cycleName}</td>
+                                    <td>{review.name}</td>
+                                    <td>{review.rating} ★</td>
+                                    <td>{review.comment}</td>
+                                    <td>
+                                        <Button variant="danger" size="sm" onClick={() => deleteReviewHandler(review.cycleId, review._id)}>
+                                            Delete
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                ) : (
+                    <p>No reviews found.</p>
+                )}
+            </div>
       {/* Cycle List for Admin */}
       <div className="admin-cycle-list">
         <h2>Manage Cycles</h2>

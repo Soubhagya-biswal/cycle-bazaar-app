@@ -116,12 +116,12 @@ const updateCycle = asyncHandler(async (req, res) => {
                 }
             }
             
-            // Email bhejne ke baad, subscribers ki list khaali kar do
+            
             updatedCycle.subscribers = [];
             await updatedCycle.save();
         }
 
-        // NAYA PRICE DROP NOTIFICATION LOGIC
+
         if (newPrice < oldPrice && updatedCycle.priceDropSubscribers.length > 0) {
             await updatedCycle.populate('priceDropSubscribers', 'email name');
 
@@ -154,14 +154,11 @@ const updateCycle = asyncHandler(async (req, res) => {
         throw new Error('Cycle not found');
     }
 });
-// @desc    Delete a cycle
-// @route   DELETE /cycles/:id
-// @access  Private/Admin
 const deleteCycle = asyncHandler(async (req, res) => {
   const cycle = await Cycle.findById(req.params.id);
 
   if (cycle) {
-    await cycle.deleteOne(); // Use deleteOne() for Mongoose 6+
+    await cycle.deleteOne();
     res.json({ message: 'Cycle removed' });
   } else {
     res.status(404);
@@ -285,6 +282,36 @@ const createCycleReview = asyncHandler(async (req, res) => {
         throw new Error('Cycle not found');
     }
 });
+const deleteReview = asyncHandler(async (req, res) => {
+    const cycle = await Cycle.findById(req.params.id);
+
+    if (cycle) {
+        const review = cycle.reviews.find(r => r._id.toString() === req.params.reviewId);
+
+        if (!review) {
+            res.status(404);
+            throw new Error('Review not found');
+        }
+
+        // Remove the review from the array
+        cycle.reviews = cycle.reviews.filter(r => r._id.toString() !== req.params.reviewId);
+
+        // Recalculate rating
+        cycle.numReviews = cycle.reviews.length;
+        if (cycle.reviews.length > 0) {
+            cycle.rating = cycle.reviews.reduce((acc, item) => item.rating + acc, 0) / cycle.reviews.length;
+        } else {
+            cycle.rating = 0;
+        }
+
+        await cycle.save();
+        res.json({ message: 'Review removed' });
+
+    } else {
+        res.status(404);
+        throw new Error('Cycle not found');
+    }
+});
 export {
   getAllCycles,
   addCycle,
@@ -295,5 +322,6 @@ export {
   unsubscribeFromStockNotification,
   subscribeToPriceDrop,
   unsubscribeFromPriceDrop,
-  createCycleReview
+  createCycleReview,
+  deleteReview 
 };
