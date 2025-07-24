@@ -13,7 +13,12 @@ import orderRoutes from './routes/orderRoutes.js';
 import returnRoutes from './routes/returnRoutes.js';
 
 const app = express();
+// --- NAYA CODE YAHAN ADD KIYA HAI ---
+// Render automatically provides process.env.PORT.
+// Ye console.log aapko Render logs mein batayega ki aapka server kis port par chalne ki koshish kar raha hai.
 const port = process.env.PORT || 5000;
+console.log(`Server attempting to start on port: ${port}`); // Ye line add ki hai debugging ke liye
+// --- NAYA CODE END ---
 
 // NAYA, ZYADA SPECIFIC CORS CONFIGURATION
 // NAYA, FLEXIBLE CORS CONFIGURATION
@@ -45,6 +50,7 @@ app.use('/api/users', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/returns', returnRoutes);
+
 app.listen(port, () => {
   console.log(`Server successfully started on port ${port}`);
 });
