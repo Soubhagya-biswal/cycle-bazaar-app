@@ -255,3 +255,31 @@
 .form-box .form-check-label {
   color: #f0f0f0;
 }
+.review-container {
+  margin-top: 1rem;
+}
+
+.review-box {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.review-author {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.review-date {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.review-comment {
+  font-size: 0.95rem;
+}

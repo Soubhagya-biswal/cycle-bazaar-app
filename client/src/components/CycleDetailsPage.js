@@ -261,19 +261,22 @@ function CycleDetailsPage() {
 <Col md={6}>
   <h2>Reviews</h2>
   {cycle.reviews && cycle.reviews.length > 0 ? (
-    <ListGroup variant='flush'>
-      {cycle.reviews.map(review => (
-        <ListGroup.Item key={review._id}>
-          <strong>{review.name}</strong>
-          <p>{new Date(review.createdAt).toLocaleDateString()}</p>
-          <p>{review.comment}</p>
-        </ListGroup.Item>
+    <div className="review-container">
+      {cycle.reviews.map((review) => (
+        <div key={review._id} className="review-box">
+          <div className="review-author">{review.name}</div>
+          <div className="review-date">
+            {new Date(review.createdAt).toLocaleDateString()}
+          </div>
+          <div className="review-comment">{review.comment}</div>
+        </div>
       ))}
-    </ListGroup>
+    </div>
   ) : (
     <Alert variant="info">No Reviews Yet</Alert>
   )}
 </Col>
+
                 <Col md={6}>
                     <h2>Write a Customer Review</h2>
                     {reviewError && <Alert variant="danger">{reviewError}</Alert>}
