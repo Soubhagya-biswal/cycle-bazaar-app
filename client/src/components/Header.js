@@ -70,7 +70,11 @@ function Header() {
                                     </LinkContainer>
                                      <LinkContainer to="/wishlist">
         <NavDropdown.Item>My Wishlist</NavDropdown.Item>
-    </LinkContainer>
+                                    </LinkContainer>
+                                    {/* NAYA 'MY REVIEWS' LINK */}
+                            <LinkContainer to="/myreviews">
+                                <NavDropdown.Item>My Reviews</NavDropdown.Item>
+                            </LinkContainer>
                                     {/* Logout Button */}
                                     <NavDropdown.Item onClick={logoutHandler}>Logout</NavDropdown.Item>
                                 </NavDropdown>

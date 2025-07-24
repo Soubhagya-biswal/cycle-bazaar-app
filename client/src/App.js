@@ -22,6 +22,7 @@ import MyOrdersScreen from './components/MyOrdersScreen';
 import WishlistPage from './components/WishlistPage';
 import OrderListScreen from './components/OrderListScreen'; 
 import UserListScreen from './components/UserListScreen';
+import MyReviewsPage from './components/MyReviewsPage.js';
 import ProfilePage from './components/ProfilePage.js';
 import AddressPage from './components/AddressPage';
 
@@ -61,6 +62,7 @@ function App() {
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/myorders" element={<MyOrdersScreen />} />
+            <Route path="/myreviews" element={<MyReviewsPage />} />
           </Routes>
         </Container>
       </main>

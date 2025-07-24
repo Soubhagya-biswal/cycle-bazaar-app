@@ -1,9 +1,8 @@
-import asyncHandler from 'express-async-handler'; // Import asyncHandler for error handling
-import User from '../models/user.model.js'; // Import your User model
+import asyncHandler from 'express-async-handler'; 
+import User from '../models/user.model.js'; 
+import Cycle from '../models/cycle.model.js';
 
-// @desc    Get all users (for Admin)
-// @route   GET /api/users
-// @access  Private/Admin
+
 const getAllUsers = asyncHandler(async (req, res) => {
   // Find all users
   const users = await User.find({});
@@ -19,10 +18,10 @@ const deleteUser = asyncHandler(async (req, res) => {
       throw new Error('Cannot delete admin user');
     }
 
-    await user.deleteOne(); // Use deleteOne() for Mongoose 6+
+    await user.deleteOne(); 
     res.json({ message: 'User removed' });
   } else {
-    res.status(404); // Not Found
+    res.status(404); 
     throw new Error('User not found');
   }
 });
@@ -35,11 +34,9 @@ const toggleWishlist = asyncHandler(async (req, res) => {
         let message = '';
 
         if (index > -1) {
-            // Item is already in wishlist, so remove it
             user.wishlist.splice(index, 1);
             message = 'Removed from wishlist';
         } else {
-            // Item is not in wishlist, so add it
             user.wishlist.push(cycleId);
             message = 'Added to wishlist';
         }
@@ -61,9 +58,6 @@ const getWishlist = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 });
-// @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -102,16 +96,13 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 });
-// @desc    Get user address
-// @route   GET /api/users/address
-// @access  Private
 const getUserAddress = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user && user.shippingAddress) {
         res.json(user.shippingAddress);
     } else if (user) {
-        res.json({}); // Return empty object if no address is set
+        res.json({}); 
     } else {
         res.status(404);
         throw new Error('User not found');
@@ -135,6 +126,27 @@ const updateUserAddress = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 });
+const getMyReviews = asyncHandler(async (req, res) => {
+    
+    const cyclesWithUserReviews = await Cycle.find({ 'reviews.user': req.user._id });
+
+    if (cyclesWithUserReviews) {
+                const myReviews = cyclesWithUserReviews.flatMap(cycle => 
+            cycle.reviews
+                .filter(review => review.user.toString() === req.user._id.toString())
+                .map(review => ({
+                    ...review.toObject(),
+                    cycleId: cycle._id,
+                    cycleBrand: cycle.brand,
+                    cycleModel: cycle.model,
+                    cycleImageUrl: cycle.imageUrl
+                }))
+        );
+        res.json(myReviews);
+    } else {
+        res.json([]);
+    }
+});
 export {
   getAllUsers,
   deleteUser,
@@ -143,5 +155,6 @@ export {
   getUserProfile,
   updateUserProfile,
   getUserAddress,
-  updateUserAddress
+  updateUserAddress,
+  getMyReviews ,
 };
