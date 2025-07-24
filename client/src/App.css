@@ -283,3 +283,11 @@
 .review-comment {
   font-size: 0.95rem;
 }
+.review-box {
+  background-color: #2c2c2e;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border-left: 5px solid #61dafb;
+  color: #f0f0f0; /* <-- Add this line */
+}
