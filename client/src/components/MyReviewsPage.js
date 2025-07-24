@@ -51,7 +51,7 @@ function MyReviewsPage() {
 
     return (
         <>
-            <h1>My Reviews</h1>
+            <h1 className="my-4">My Reviews</h1>
             {loading ? (
                 <p>Loading reviews...</p>
             ) : error ? (
@@ -61,25 +61,28 @@ function MyReviewsPage() {
             ) : (
                 <ListGroup variant="flush">
                     {reviews.map(review => (
-                        <ListGroup.Item key={review._id} className="mb-3 p-3" style={{backgroundColor: '#2c2c2e', borderRadius: '10px'}}>
-                            <Row>
-                                <Col md={2}>
-                                    <Link to={`/cycle/${review.cycleId}`}>
-                                        <Image src={review.cycleImageUrl} alt={review.cycleModel} fluid rounded />
-                                    </Link>
-                                </Col>
-                                <Col md={8}>
-                                    <h5><Link to={`/cycle/${review.cycleId}`}>{review.cycleBrand} {review.cycleModel}</Link></h5>
-                                    <p><strong>Rating:</strong> {review.rating} ★</p>
-                                    <p>"{review.comment}"</p>
-                                    <small className="text-muted">Reviewed on: {new Date(review.createdAt).toLocaleDateString()}</small>
-                                </Col>
-                                <Col md={2} className="d-flex align-items-center">
-                                    <Button variant="danger" size="sm" onClick={() => deleteReviewHandler(review.cycleId, review._id)}>
-                                        Delete
-                                    </Button>
-                                </Col>
-                            </Row>
+                        <ListGroup.Item key={review._id} className="p-0 mb-3">
+                            {/* NAYA CODE: review-box div add kiya gaya hai */}
+                            <div className="review-box">
+                                <Row className="align-items-center">
+                                    <Col md={2}>
+                                        <Link to={`/cycle/${review.cycleId}`}>
+                                            <Image src={review.cycleImageUrl} alt={review.cycleModel} fluid rounded />
+                                        </Link>
+                                    </Col>
+                                    <Col md={8}>
+                                        <h5><Link to={`/cycle/${review.cycleId}`}>{review.cycleBrand} {review.cycleModel}</Link></h5>
+                                        <p className="mb-1"><strong>Rating:</strong> {review.rating} ★</p>
+                                        <p className="review-comment">"{review.comment}"</p>
+                                        <small className="review-date">Reviewed on: {new Date(review.createdAt).toLocaleDateString()}</small>
+                                    </Col>
+                                    <Col md={2} className="d-flex align-items-center justify-content-end">
+                                        <Button variant="danger" size="sm" onClick={() => deleteReviewHandler(review.cycleId, review._id)}>
+                                            Delete
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </div>
                         </ListGroup.Item>
                     ))}
                 </ListGroup>
