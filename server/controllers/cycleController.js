@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler'; // Import asyncHandler for error handling
 import Cycle from '../models/cycle.model.js';
+import Order from '../models/order.model.js';
 import User from '../models/user.model.js';
 import sendEmail from '../utils/sendEmail.js';
 
@@ -238,6 +239,54 @@ const unsubscribeFromPriceDrop = asyncHandler(async (req, res) => {
         throw new Error('Cycle not found');
     }
 });
+// @desc    Create a new review
+// @route   POST /cycles/:id/reviews
+// @access  Private
+const createCycleReview = asyncHandler(async (req, res) => {
+    const { rating, comment } = req.body;
+    const cycle = await Cycle.findById(req.params.id);
+
+    if (cycle) {
+        // Check if user has already reviewed this product
+        const alreadyReviewed = cycle.reviews.find(
+            (r) => r.user.toString() === req.user._id.toString()
+        );
+        if (alreadyReviewed) {
+            res.status(400);
+            throw new Error('You have already reviewed this product');
+        }
+
+        // Check if the user has purchased and received the product
+        const deliveredOrders = await Order.find({
+            user: req.user._id,
+            'orderItems.cycle': cycle._id,
+            status: 'Delivered',
+        });
+
+        if (deliveredOrders.length === 0) {
+            res.status(400);
+            throw new Error('You can only review products you have purchased and received');
+        }
+
+        const review = {
+            name: req.user.name,
+            rating: Number(rating),
+            comment,
+            user: req.user._id,
+        };
+
+        cycle.reviews.push(review);
+        cycle.numReviews = cycle.reviews.length;
+        cycle.rating = cycle.reviews.reduce((acc, item) => item.rating + acc, 0) / cycle.reviews.length;
+
+        await cycle.save();
+        res.status(201).json({ message: 'Review added' });
+
+    } else {
+        res.status(404);
+        throw new Error('Cycle not found');
+    }
+});
 export {
   getAllCycles,
   addCycle,
@@ -248,4 +297,5 @@ export {
   unsubscribeFromStockNotification,
   subscribeToPriceDrop,
   unsubscribeFromPriceDrop,
+  createCycleReview
 };
