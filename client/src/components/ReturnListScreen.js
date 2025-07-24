@@ -133,12 +133,16 @@ function ReturnListScreen() {
                 <tr key={returnReq._id}>
                   <td>{returnReq._id}</td>
                   <td>
-                    <LinkContainer to={`/order/${returnReq.orderId._id}?adminView=true`}>
-                      <Button variant='link' className='btn-sm'>
-                        {returnReq.orderId._id}
-                      </Button>
-                    </LinkContainer>
-                  </td>
+  {/* NAYA CODE: 'to' prop ko ek object ke roop mein diya hai */}
+  <LinkContainer to={{
+    pathname: `/order/${returnReq.orderId._id}`, // Pathname mein sirf path hai
+    search: '?adminView=true' // Query parameters 'search' field mein hain
+  }}>
+    <Button variant='link' className='btn-sm'>
+      {returnReq.orderId._id}
+    </Button>
+  </LinkContainer>
+</td>
                   <td>{returnReq.userId ? `${returnReq.userId.name} (${returnReq.userId.email})` : 'N/A'}</td>
                   <td>{returnReq.reason}</td>
                   <td>{returnReq.returnMethod}</td>
