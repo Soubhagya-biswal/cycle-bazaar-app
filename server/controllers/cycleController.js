@@ -221,10 +221,6 @@ const subscribeToPriceDrop = asyncHandler(async (req, res) => {
         throw new Error('Cycle not found');
     }
 });
-
-// @desc    Unsubscribe from price drop notification
-// @route   DELETE /cycles/:id/subscribe-price
-// @access  Private
 const unsubscribeFromPriceDrop = asyncHandler(async (req, res) => {
     const cycle = await Cycle.findById(req.params.id);
 
@@ -239,23 +235,11 @@ const unsubscribeFromPriceDrop = asyncHandler(async (req, res) => {
         throw new Error('Cycle not found');
     }
 });
-// @desc    Create a new review
-// @route   POST /cycles/:id/reviews
-// @access  Private
 const createCycleReview = asyncHandler(async (req, res) => {
     const { rating, comment } = req.body;
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
-        // Check if user has already reviewed this product
-        const alreadyReviewed = cycle.reviews.find(
-            (r) => r.user.toString() === req.user._id.toString()
-        );
-        if (alreadyReviewed) {
-            res.status(400);
-            throw new Error('You have already reviewed this product');
-        }
-
         // Check if the user has purchased and received the product
         const deliveredOrders = await Order.find({
             user: req.user._id,
@@ -268,19 +252,33 @@ const createCycleReview = asyncHandler(async (req, res) => {
             throw new Error('You can only review products you have purchased and received');
         }
 
-        const review = {
-            name: req.user.name,
-            rating: Number(rating),
-            comment,
-            user: req.user._id,
-        };
+        const alreadyReviewed = cycle.reviews.find(
+            (r) => r.user.toString() === req.user._id.toString()
+        );
 
-        cycle.reviews.push(review);
-        cycle.numReviews = cycle.reviews.length;
-        cycle.rating = cycle.reviews.reduce((acc, item) => item.rating + acc, 0) / cycle.reviews.length;
+        if (alreadyReviewed) {
+            // Agar review pehle se hai, to use update karo
+            alreadyReviewed.rating = Number(rating);
+            alreadyReviewed.comment = comment;
+        } else {
+            // Agar review nahi hai, to naya banao
+            const review = {
+                name: req.user.name,
+                rating: Number(rating),
+                comment,
+                user: req.user._id,
+            };
+            cycle.reviews.push(review);
+            cycle.numReviews = cycle.reviews.length;
+        }
+
+        // Overall rating ko dobara calculate karo
+        cycle.rating =
+            cycle.reviews.reduce((acc, item) => item.rating + acc, 0) /
+            cycle.reviews.length;
 
         await cycle.save();
-        res.status(201).json({ message: 'Review added' });
+        res.status(201).json({ message: 'Review submitted successfully' });
 
     } else {
         res.status(404);
