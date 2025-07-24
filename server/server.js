@@ -10,6 +10,7 @@ import cycleRouter from './routes/cycles.js';
 import userRouter from './routes/users.js';
 import cartRouter from './routes/cart.js';
 import orderRoutes from './routes/orderRoutes.js';
+import returnRoutes from './routes/returnRoutes.js';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -43,7 +44,7 @@ app.use('/cycles', cycleRouter);
 app.use('/api/users', userRouter);
 app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRoutes);
-
+app.use('/api/returns', returnRoutes);
 app.listen(port, () => {
   console.log(`Server successfully started on port ${port}`);
 });

@@ -47,11 +47,22 @@ const orderSchema = new mongoose.Schema(
 
     // --- NAYE FIELDS CANCELLATION KE LIYE ---
     status: {
-      type: String,
-      required: true,
-      default: 'Processing',
-      enum: ['Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancellation Requested', 'Cancelled'],
-    },
+  type: String,
+  required: true,
+  default: 'Processing',
+  enum: [
+    'Processing',
+    'Shipped',
+    'Out for Delivery',
+    'Delivered',
+    'Cancellation Requested',
+    'Cancelled',
+    'Return Requested',     
+    'Return Approved',      
+    'Return Rejected',      
+    'Refund Processed'    
+  ],
+},
     isRefunded: {
       type: Boolean,
       required: true,
@@ -65,7 +76,25 @@ const orderSchema = new mongoose.Schema(
       status: { type: String, enum: ['Pending', 'Approved', 'Rejected'] },
       requestedAt: { type: Date },
     },
-    // --- END NAYE FIELDS ---
+
+returnInitiated: {
+  type: Boolean,
+  default: false, 
+},
+returnRequestDate: {
+  type: Date, 
+  default: null 
+},
+returnId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Return', 
+  default: null 
+},
+returnDeadline: {
+  type: Date, 
+  default: null 
+    },
+
   },
   {
     timestamps: true,

@@ -25,6 +25,7 @@ import UserListScreen from './components/UserListScreen';
 import MyReviewsPage from './components/MyReviewsPage.js';
 import ProfilePage from './components/ProfilePage.js';
 import AddressPage from './components/AddressPage';
+import ReturnListScreen from './components/ReturnListScreen';
 
 function App() {
   return (
@@ -46,6 +47,8 @@ function App() {
             <Route path="/admin/userlist" element={<UserListScreen />} />
             <Route path="/admin/orderlist" element={<OrderListScreen />} /> 
             <Route path="/edit/:id" element={<EditCycle />} /> 
+            <Route path="/admin/returns" element={<ReturnListScreen />} />
+
 
             {/* User/Auth Routes */}
             <Route path="/profile" element={<ProfilePage />} />

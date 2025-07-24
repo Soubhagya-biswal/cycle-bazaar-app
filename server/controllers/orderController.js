@@ -151,9 +151,16 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     if (status === 'Delivered') {
       order.isDelivered = true;
       order.deliveredAt = Date.now();
+      // --- NAYA CODE YAHAN ADD KAREIN (returnDeadline set karne ke liye) ---
+      const returnWindowDays = 7; // Return window ke liye din (aap isko adjust kar sakte hain)
+      const returnDeadlineDate = new Date(order.deliveredAt); // Delivered date se calculate karein
+      returnDeadlineDate.setDate(returnDeadlineDate.getDate() + returnWindowDays);
+      order.returnDeadline = returnDeadlineDate; // Order ka returnDeadline set kiya
+      // --- NAYA CODE END ---
     } else {
       order.isDelivered = false;
       order.deliveredAt = undefined;
+      order.returnDeadline = undefined;
     }
 
     const updatedOrder = await order.save();
