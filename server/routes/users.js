@@ -3,7 +3,7 @@ import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js';
 import { protect, admin } from '../middleware/authMiddleware.js'; 
-import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress } from '../controllers/userController.js';
+import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews } from '../controllers/userController.js';
 
 const router = express.Router();
 router.route('/').get(protect, admin, getAllUsers);
@@ -129,4 +129,5 @@ router.route('/profile')
 router.route('/address')
     .get(protect, getUserAddress)
     .put(protect, updateUserAddress);
+router.route('/myreviews').get(protect, getMyReviews);
 export default router;

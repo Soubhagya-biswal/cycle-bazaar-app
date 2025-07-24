@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Table, Button, Alert, Row, Col, Image, ListGroup } from 'react-bootstrap';
+import { ListGroup, Button, Alert, Row, Col, Image } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
 
 function MyReviewsPage() {
@@ -37,7 +37,10 @@ function MyReviewsPage() {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${userInfo.token}` }
                 });
-                if (!res.ok) throw new Error('Failed to delete review');
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.message || 'Failed to delete review');
+                }
                 alert('Review deleted successfully');
                 fetchMyReviews(); // Refresh the reviews list
             } catch (error) {
@@ -61,12 +64,14 @@ function MyReviewsPage() {
                         <ListGroup.Item key={review._id} className="mb-3 p-3" style={{backgroundColor: '#2c2c2e', borderRadius: '10px'}}>
                             <Row>
                                 <Col md={2}>
-                                    <Image src={review.cycleImageUrl} alt={review.cycleModel} fluid rounded />
+                                    <Link to={`/cycle/${review.cycleId}`}>
+                                        <Image src={review.cycleImageUrl} alt={review.cycleModel} fluid rounded />
+                                    </Link>
                                 </Col>
                                 <Col md={8}>
                                     <h5><Link to={`/cycle/${review.cycleId}`}>{review.cycleBrand} {review.cycleModel}</Link></h5>
                                     <p><strong>Rating:</strong> {review.rating} ★</p>
-                                    <p>{review.comment}</p>
+                                    <p>"{review.comment}"</p>
                                     <small className="text-muted">Reviewed on: {new Date(review.createdAt).toLocaleDateString()}</small>
                                 </Col>
                                 <Col md={2} className="d-flex align-items-center">
