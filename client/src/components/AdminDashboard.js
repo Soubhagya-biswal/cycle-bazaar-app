@@ -125,7 +125,7 @@ function AdminDashboard() {
         if (window.confirm('Are you sure you want to delete this review?')) {
             try {
                 // THE URL IS FIXED IN THIS LINE
-                const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/${cycleId}/reviews/${reviewId}`, {
+                const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cycles/${cycleId}/reviews/${reviewId}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${userInfo.token}` }
                 });
