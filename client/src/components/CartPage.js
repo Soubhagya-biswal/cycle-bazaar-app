@@ -35,26 +35,29 @@ function CartPage() {
                 ) : (
                     <ListGroup variant="flush">
                         {cartItems.map(item => (
-                            <ListGroup.Item key={item.cycleId._id}>
-                                <Row className="align-items-center">
-                                    <Col md={2}>
-                                        <Image src={item.cycleId.imageUrl} alt={item.cycleId.model} fluid rounded />
-                                    </Col>
-                                    <Col md={3}>
-                                        <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
-                                    </Col>
-                                    <Col md={2}>₹{item.cycleId.price}</Col>
-                                    <Col md={2}>
-                                        Quantity: {item.quantity}
-                                    </Col>
-                                    <Col md={2}>
-                                        <Button type="button" variant="light" onClick={() => removeFromCartHandler(item.cycleId._id)}>
-                                            <i className="fas fa-trash"></i>
-                                        </Button>
-                                    </Col>
-                                </Row>
-                            </ListGroup.Item>
-                        ))}
+    // NAYA CHECK: This line checks if the cycle data exists before trying to display it
+    item.cycleId && (
+        <ListGroup.Item key={item.cycleId._id}>
+            <Row className="align-items-center">
+                <Col md={2}>
+                    <Image src={item.cycleId.imageUrl} alt={item.cycleId.model} fluid rounded />
+                </Col>
+                <Col md={3}>
+                    <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
+                </Col>
+                <Col md={2}>₹{item.cycleId.price}</Col>
+                <Col md={2}>
+                    Quantity: {item.quantity}
+                </Col>
+                <Col md={2}>
+                    <Button type="button" variant="light" onClick={() => removeFromCartHandler(item.cycleId._id)}>
+                        <i className="fas fa-trash"></i>
+                    </Button>
+                </Col>
+            </Row>
+        </ListGroup.Item>
+    )
+))}
                     </ListGroup>
                 )}
             </Col>
