@@ -122,6 +122,7 @@ function OrderPage() {
         }
     };
 
+    // --- MARK AS PAID HANDLER (JO GALTI SE REMOVE HO GAYA THA) ---
     const markAsPaidHandler = async () => {
         try {
             setLoading(true);
@@ -138,7 +139,8 @@ function OrderPage() {
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to mark order as paid');
             }
-            fetchOrder();
+            fetchOrder(); // Order details ko refresh karo
+            alert('Order marked as paid successfully!');
 
         } catch (err) {
             setError(err.message);
@@ -146,6 +148,7 @@ function OrderPage() {
             setLoading(false);
         }
     };
+    // --- MARK AS PAID HANDLER END ---
 
     const cancelOrderHandler = async () => {
         const reason = window.prompt("Please provide a reason for cancellation:");
@@ -400,6 +403,18 @@ function OrderPage() {
                                         disabled={loading || selectedStatus === order.status}
                                     >
                                         Update Order Status
+                                    </Button>
+                                </ListGroup.Item>
+                                    )}
+                                    {userInfo && userInfo.isAdmin && isAdminView && order.paymentMethod === 'COD' && !order.isPaid && (
+                                <ListGroup.Item className="d-grid"> {/* d-grid for full width button */}
+                                    <Button
+                                        type='button'
+                                        className='btn btn-block btn-success'
+                                        onClick={markAsPaidHandler}
+                                        disabled={loading}
+                                    >
+                                        Mark As Paid
                                     </Button>
                                 </ListGroup.Item>
                             )}
