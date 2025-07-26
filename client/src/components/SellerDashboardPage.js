@@ -2,11 +2,24 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Table, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // To get userInfo and token
+import { Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+// Chart.js ke zaroori elements register karein
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function SellerDashboardPage() {
     const [soldCycles, setSoldCycles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [salesByBrandData, setSalesByBrandData] = useState({
+        labels: [],
+        datasets: [{
+            data: [],
+            backgroundColor: [],
+            borderColor: [],
+            borderWidth: 1,
+        }],
+    });
 
     const { userInfo } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -71,6 +84,29 @@ function SellerDashboardPage() {
                 });
             });
             setSoldCycles(allSoldItems);
+            const salesAggregatedByBrand = allSoldItems.reduce((acc, item) => {
+                const brand = item.productBrand || 'Unknown Brand';
+                acc[brand] = (acc[brand] || 0) + item.totalItemPrice; // Sum total price for each brand
+                return acc;
+            }, {});
+
+            const chartLabels = Object.keys(salesAggregatedByBrand);
+            const chartValues = Object.values(salesAggregatedByBrand);
+
+            // Generate dynamic colors (simple example, you might want a predefined palette)
+            const backgroundColors = chartLabels.map(() => `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.6)`);
+            const borderColors = chartLabels.map(() => `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`);
+
+
+            setSalesByBrandData({
+                labels: chartLabels,
+                datasets: [{
+                    data: chartValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1,
+                }],
+            });
 
         } catch (err) {
             setError(err.message || 'Error fetching sold cycles.');
@@ -96,7 +132,17 @@ function SellerDashboardPage() {
                     {!loading && soldCycles.length === 0 && !error && (
                         <Alert variant="info">You haven't sold any cycles yet, or no orders are visible here.</Alert>
                     )}
-
+                       {/* 👇️ START: NAYA CHART RENDERING YAHAN 👇️ */}
+                    {!loading && soldCycles.length > 0 && (
+                        <Row className="mb-4"> {/* mb-4 adds margin-bottom */}
+                            <Col md={6} className="mx-auto"> {/* Chart ko center karne ke liye */}
+                                <h2>Sales by Brand</h2>
+                                <div style={{ height: '300px', width: '300px', margin: 'auto' }}> {/* Chart size control */}
+                                    <Pie data={salesByBrandData} options={{ maintainAspectRatio: false }} />
+                                </div>
+                            </Col>
+                        </Row>
+                    )}
                     {!loading && soldCycles.length > 0 && (
                         <Table striped bordered hover responsive className="table-sm">
                             <thead>
