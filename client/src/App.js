@@ -27,6 +27,8 @@ import ProfilePage from './components/ProfilePage.js';
 import AddressPage from './components/AddressPage';
 import ReturnListScreen from './components/ReturnListScreen';
 import BecomeSellerPage from './components/BecomeSellerPage';
+import SellerApplicationListPage from './components/SellerApplicationListPage';
+
 
 function App() {
   return (
@@ -49,7 +51,7 @@ function App() {
             <Route path="/admin/orderlist" element={<OrderListScreen />} /> 
             <Route path="/edit/:id" element={<EditCycle />} /> 
             <Route path="/admin/returns" element={<ReturnListScreen />} />
-
+            <Route path="/admin/seller-applications" element={<SellerApplicationListPage />} />
 
             {/* User/Auth Routes */}
             <Route path="/profile" element={<ProfilePage />} />

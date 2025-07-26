@@ -110,19 +110,21 @@ function Header() {
                                         <NavDropdown.Item>Orders</NavDropdown.Item>
                                     </LinkContainer>
                                     
-                                    {/* --- NAYA LINK YAHAN ADD KAREIN --- */}
                                     <LinkContainer to='/admin/returns'>
                                         <NavDropdown.Item>Return Requests</NavDropdown.Item>
                                     </LinkContainer>
-                                    {/* --- NAYA LINK END --- */}
 
-                                    {/* You can also put the general Admin Dashboard link here if you want */}
+                                    {/* 👇️ START: NAYA 'SELLER APPLICATIONS' LINK 👇️ */}
+                                    <LinkContainer to='/admin/seller-applications'>
+                                        <NavDropdown.Item>Seller Applications</NavDropdown.Item>
+                                    </LinkContainer>
+                                    {/* 👆️ END: NAYA 'SELLER APPLICATIONS' LINK 👆️ */}
+                                    
                                     <LinkContainer to='/admin'>
                                         <NavDropdown.Item>Admin Dashboard</NavDropdown.Item>
                                     </LinkContainer>
                                 </NavDropdown>
                             )}
-                            {/* --- END ADMIN DROPDOWN --- */}
 
                         </Nav>
                     </Navbar.Collapse>
