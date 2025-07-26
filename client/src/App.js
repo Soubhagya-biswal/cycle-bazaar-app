@@ -26,6 +26,7 @@ import MyReviewsPage from './components/MyReviewsPage.js';
 import ProfilePage from './components/ProfilePage.js';
 import AddressPage from './components/AddressPage';
 import ReturnListScreen from './components/ReturnListScreen';
+import BecomeSellerPage from './components/BecomeSellerPage';
 
 function App() {
   return (
@@ -66,6 +67,7 @@ function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/myorders" element={<MyOrdersScreen />} />
             <Route path="/myreviews" element={<MyReviewsPage />} />
+            <Route path="/become-seller" element={<BecomeSellerPage />} />
           </Routes>
         </Container>
       </main>

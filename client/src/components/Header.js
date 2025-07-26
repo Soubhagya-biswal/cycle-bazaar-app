@@ -75,6 +75,16 @@ function Header() {
                                     <LinkContainer to="/myreviews">
                                         <NavDropdown.Item>My Reviews</NavDropdown.Item>
                                     </LinkContainer>
+
+                                    {/* 👇️ START: NAYA 'BECOME A SELLER' LINK 👇️ */}
+                                    {/* This link only shows if the user is logged in AND is NOT an admin */}
+                                    {userInfo && !userInfo.isAdmin && (
+                                        <LinkContainer to="/become-seller">
+                                            <NavDropdown.Item>Become a Seller</NavDropdown.Item>
+                                        </LinkContainer>
+                                    )}
+                                    {/* 👆️ END: NAYA 'BECOME A SELLER' LINK 👆️ */}
+
                                     {/* Logout Button */}
                                     <NavDropdown.Item onClick={logoutHandler}>Logout</NavDropdown.Item>
                                 </NavDropdown>
