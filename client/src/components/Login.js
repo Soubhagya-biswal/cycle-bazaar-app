@@ -9,6 +9,7 @@ function Login() {
     const [error, setError] = useState('');
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,8 +24,8 @@ function Login() {
                 setError(data || 'Login failed');
                 return;
             }
-            login(data); // Context se login function call kiya
-            navigate('/'); // Homepage par redirect kar diya
+            login(data); 
+            navigate('/'); 
         } catch (err) {
             setError('Server error');
         }
@@ -41,9 +42,26 @@ function Login() {
                     <Form.Control type="email" placeholder="Enter email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="password">
-                    <Form.Label>Password</Form.Label>
-                    <Form.Control type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                </Form.Group>
+    <Form.Label>Password</Form.Label>
+    
+    <div className="input-group"> 
+        <Form.Control
+            type={showPassword ? 'text' : 'password'} 
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+        />
+        <Button
+            variant="outline-secondary" 
+            onClick={() => setShowPassword(!showPassword)} 
+        >
+            
+            <i className={showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
+        </Button>
+    </div>
+    
+</Form.Group>
                 <Button type="submit" variant="primary" className="w-100 mt-3">Login</Button>
             </Form>
             <p className="mt-3 text-center">

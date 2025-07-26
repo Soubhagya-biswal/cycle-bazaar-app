@@ -10,7 +10,9 @@ function Register() {
         confirmPassword: ''
     });
     const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const { name, email, password, confirmPassword } = formData;
 
@@ -36,7 +38,7 @@ function Register() {
             const data = await res.json();
 
             if (!res.ok) {
-                // If response is not ok, set the error message from backend
+                
                 setError(data || 'Something went wrong');
                 setMessage('');
             } else {
@@ -67,14 +69,49 @@ function Register() {
           </Form.Group>
 
           <Form.Group className="mb-3" controlId="password">
-            <Form.Label>Password</Form.Label>
-            <Form.Control type="password" placeholder="Enter password" name="password" value={password} onChange={handleChange} required />
-          </Form.Group>
+  <Form.Label>Password</Form.Label>
+
+  <div className="input-group"> 
+    <Form.Control
+      type={showPassword ? 'text' : 'password'} 
+      placeholder="Enter password"
+      name="password"
+      value={password}
+      onChange={handleChange}
+      required
+    />
+    <Button
+      variant="outline-secondary"
+      onClick={() => setShowPassword(!showPassword)} 
+    >
+      
+      <i className={showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
+    </Button>
+  </div>
+  
+</Form.Group>
 
           <Form.Group className="mb-3" controlId="confirmPassword">
-            <Form.Label>Confirm Password</Form.Label>
-            <Form.Control type="password" placeholder="Confirm password" name="confirmPassword" value={confirmPassword} onChange={handleChange} required />
-          </Form.Group>
+  <Form.Label>Confirm Password</Form.Label>
+ 
+  <div className="input-group">
+    <Form.Control
+      type={showConfirmPassword ? 'text' : 'password'} 
+      placeholder="Confirm password"
+      name="confirmPassword"
+      value={confirmPassword}
+      onChange={handleChange}
+      required
+    />
+    <Button
+      variant="outline-secondary"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+    >
+      <i className={showConfirmPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
+    </Button>
+  </div>
+  
+</Form.Group>
 
           <Button type="submit" variant="primary" className="w-100 mt-3">
             Register
