@@ -135,47 +135,74 @@ const getAllOrders = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 const getSellerOrders = asyncHandler(async (req, res) => {
-    
     const sellerId = req.user._id;
+    console.log(`Fetching orders for seller ID: ${sellerId}`);
 
-    
+    // --- NAYA POPULATE LOGIC YAHAN ---
     const orders = await Order.find({})
         .populate({
+            // Path to the array element. We explicitly populate the 'cycle' field within each orderItem.
             path: 'orderItems.cycle',
-            select: 'brand model price seller imageUrl', 
-            populate: { 
-                path: 'seller',
-                select: 'name' 
+            // Specify the model to reference
+            model: 'Cycle',
+            // Select the fields you need from the Cycle document
+            // Crucially, 'seller' is part of the Cycle model and needs to be brought in
+            select: 'brand model price seller imageUrl',
+            // Now, populate the 'seller' field *inside* the 'cycle' object that we just got
+            populate: {
+                path: 'seller', // This 'seller' refers to the seller field within the Cycle model
+                model: 'User', // Specify the model for the seller (which is a User)
+                select: 'name' // Select the 'name' field from the User model
             }
         })
-        .populate('user', 'name email'); 
+        .populate('user', 'name email'); // This populates the user who made the order
 
-    
+    console.log(`Total orders fetched from DB (before filtering): ${orders.length}`);
+
+    // --- NAYA CONSOLE.LOG YAHAN - Poora populated order object dekho ---
+    if (orders.length > 0) {
+        console.log('--- Debug: First Populated Order Sample ---');
+        // JSON.stringify will show populated objects
+        console.log(JSON.stringify(orders[0].toObject({ getters: true, virtuals: true }), null, 2));
+        console.log('-----------------------------------------');
+    }
+    // --- END NAYA CONSOLE.LOG ---
+
+
     const sellerSpecificOrders = orders.map(order => {
-        
-        const filteredItems = order.orderItems.filter(item => {
-            
-            return item.cycle && item.cycle.seller && item.cycle.seller._id.toString() === sellerId.toString(); 
-        });
-
-        
-        if (filteredItems.length === 0) {
+        // Only consider orders that are delivered and paid
+        if (!order.isDelivered || !order.isPaid) {
+            console.log(`Skipping order ${order._id}: Not Delivered or Not Paid`);
             return null;
         }
 
-        
-        const newItemsPrice = filteredItems.reduce((acc, item) => acc + item.qty * item.price, 0);
+        const filteredItems = order.orderItems.filter(item => {
+            console.log(`  Processing Order ${order._id}, Item: ${item.name}`);
+            console.log(`    Item Cycle Object (Populated?): ${item.cycle ? 'Exists' : 'NULL'}, Type: ${typeof item.cycle}`);
+            console.log(`    Item Seller Object (Populated?): ${item.cycle?.seller ? 'Exists' : 'NULL'}, Type: ${typeof item.cycle?.seller}`);
+            console.log(`    Item Seller ID: ${item.cycle?.seller?._id}, My Seller ID: ${sellerId.toString()}`);
+
+            // Crucial check: Does the item's cycle belong to the logged-in seller?
+            // Ensure item.cycle is an object and item.cycle.seller is also an object
+            return item.cycle && typeof item.cycle === 'object' &&
+                   item.cycle.seller && typeof item.cycle.seller === 'object' &&
+                   item.cycle.seller._id.toString() === sellerId.toString();
+        });
+
+        if (filteredItems.length === 0) {
+            console.log(`No items found for seller ${sellerId} in order ${order._id}`);
+            return null;
+        }
 
         return {
-            ...order.toObject(), 
+            ...order.toObject(),
             orderItems: filteredItems,
-            
         };
-    }).filter(Boolean); 
+    }).filter(Boolean);
 
+    console.log(`Seller-specific orders found after filtering: ${sellerSpecificOrders.length}`);
     res.json(sellerSpecificOrders);
-});
-const updateOrderStatus = asyncHandler(async (req, res) => {
+});const updateOrderStatus = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   const { status } = req.body;
 
