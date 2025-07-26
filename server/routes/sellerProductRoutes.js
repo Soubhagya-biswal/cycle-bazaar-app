@@ -31,13 +31,22 @@ router.post('/', protect, seller, asyncHandler(async (req, res) => {
     console.log(req.body);
     console.log('------------------------------------------------------------');
     
-    const { brand, model, price, imageUrl, description, stock } = req.body;
+    const { brand, model, price, imageUrl, description, variants } = req.body; 
 
     
-    if (!brand || !model || !price || !description || stock === undefined || stock === null) {
+    // Basic validation (NAYA: 'stock' ki jagah 'variants' ki validation)
+if (!brand || !model || !price || !description || !variants || !Array.isArray(variants) || variants.length === 0) {
+    res.status(400);
+    throw new Error('Please provide all required product details: brand, model, price, description, and at least one variant.');
+}
+
+// Individual variants ke andar ki details ki validation
+for (const variant of variants) {
+    if (!variant.color || !variant.size || variant.additionalPrice === undefined || variant.variantStock === undefined) {
         res.status(400);
-        throw new Error('Please provide all required product details: brand, model, price, description, and stock.');
+        throw new Error('Each variant must have a color, size, additional price, and stock.');
     }
+}
          const totalStock = variants.reduce((acc, variant) => acc + (variant.variantStock || 0), 0);
 
     const cycle = new Cycle({
@@ -46,7 +55,7 @@ router.post('/', protect, seller, asyncHandler(async (req, res) => {
         price,
         imageUrl: imageUrl || '/images/sample.jpg', 
         description,
-        stock,
+        stock:totalStock,
         seller: req.user._id, 
         numReviews: 0,
         rating: 0,
