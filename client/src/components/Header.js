@@ -109,22 +109,32 @@ function Header() {
                                     <LinkContainer to='/admin/orderlist'>
                                         <NavDropdown.Item>Orders</NavDropdown.Item>
                                     </LinkContainer>
-                                    
+
                                     <LinkContainer to='/admin/returns'>
                                         <NavDropdown.Item>Return Requests</NavDropdown.Item>
                                     </LinkContainer>
 
-                                    {/* 👇️ START: NAYA 'SELLER APPLICATIONS' LINK 👇️ */}
                                     <LinkContainer to='/admin/seller-applications'>
                                         <NavDropdown.Item>Seller Applications</NavDropdown.Item>
                                     </LinkContainer>
-                                    {/* 👆️ END: NAYA 'SELLER APPLICATIONS' LINK 👆️ */}
-                                    
+
                                     <LinkContainer to='/admin'>
                                         <NavDropdown.Item>Admin Dashboard</NavDropdown.Item>
                                     </LinkContainer>
                                 </NavDropdown>
                             )}
+                            {/* 👇️ START: NAYA SELLER DROPDOWN SECTION (Comments removed for fix) 👇️ */}
+                            {userInfo && userInfo.isSeller && !userInfo.isAdmin && ( // Only show if user is a seller AND NOT an admin
+                                <NavDropdown title='Seller' id='sellermenu'>
+                                    <LinkContainer to='/seller/products'>
+                                        <NavDropdown.Item>My Products</NavDropdown.Item>
+                                    </LinkContainer>
+                                    <LinkContainer to='/seller/dashboard'>
+                                        <NavDropdown.Item>Seller Dashboard</NavDropdown.Item>
+                                    </LinkContainer>
+                                </NavDropdown>
+                            )}
+                            {/* 👆️ END: NAYA SELLER DROPDOWN SECTION 👆️ */}
 
                         </Nav>
                     </Navbar.Collapse>

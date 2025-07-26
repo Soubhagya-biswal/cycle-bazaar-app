@@ -33,6 +33,15 @@ const admin = (req, res, next) => {
     res.status(401).json({ message: 'Not authorized as an admin' });
   }
 };
+const seller = (req, res, next) => {
+    // req.user object 'protect' middleware se aata hai
+    if (req.user && req.user.isSeller) { // Check karein ki user logged in hai aur 'isSeller' true hai
+        next(); // Agar user seller hai, to aage badho (next middleware/route handler par)
+    } else {
+        res.status(401).json({ message: 'Not authorized as a seller' }); // Agar seller nahi hai, to unauthorized response dein
+    }
+};
+// 👆️ END: NAYA 'SELLER' MIDDLEWARE YAHAN KHATAM HOTA HAI 👆️
 
 
-export { protect, admin }; // <-- Added admin here
+export { protect, admin, seller };

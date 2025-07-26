@@ -12,6 +12,7 @@ import cartRouter from './routes/cart.js';
 import orderRoutes from './routes/orderRoutes.js';
 import returnRoutes from './routes/returnRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import sellerProductRoutes from './routes/sellerProductRoutes.js';
 const app = express();
 // --- NAYA CODE YAHAN ADD KIYA HAI ---
 // Render automatically provides process.env.PORT.
@@ -51,6 +52,7 @@ app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/returns', returnRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/seller/products', sellerProductRoutes);
 app.listen(port, () => {
   console.log(`Server successfully started on port ${port}`);
 });

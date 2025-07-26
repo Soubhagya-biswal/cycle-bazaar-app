@@ -33,34 +33,38 @@ const cycleSchema = new mongoose.Schema({
   imageUrl: {
   type: String,
   required: false,
-},
-// --- ADD THESE NEW FIELDS ---
+  },
+  seller: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true, 
+        ref: 'User', 
+    },
 description: {
   type: String,
-  required: true, // Description should be required
+  required: true, 
   trim: true,
-  default: 'No description provided.' // A default value if not provided
+  default: 'No description provided.' 
 },
 stock: {
   type: Number,
-  required: true, // Stock should be required
-  default: 0,     // Default to 0 if not provided
-  min: 0          // Stock cannot be negative
+  required: true, 
+  default: 0,     
+  min: 0         
 },
-  // --- END NEW FIELDS ---
+  
 subscribers: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     }
-  ], // <-- Yahan comma (,) laga hai
-  priceDropSubscribers: [ // <-- Yeh naya field hai
+  ], 
+  priceDropSubscribers: [ 
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     }
   ]
-  , // <-- priceDropSubscribers field ke baad comma
+  , 
 reviews: [reviewSchema],
 rating: {
     type: Number,
