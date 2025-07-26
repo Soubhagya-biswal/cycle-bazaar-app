@@ -40,17 +40,25 @@ function SellerDashboardPage() {
             // Each item will represent a "sold cycle" instance
             const allSoldItems = [];
             data.forEach(order => {
+                // IMPORTANT: Filter orders here based on status (e.g., only "Delivered" and "Paid")
+                // This logic should also be consistent with the backend's filtering (if any)
+                if (!order.isDelivered || !order.isPaid) {
+                    // console.log(`Skipping order ${order._id}: Not Delivered or Not Paid`); // Debugging line
+                    return; // Skip this order if not delivered or paid
+                }
+
                 order.orderItems.forEach(item => {
-                    // Make sure item.cycleId and item.cycleId.seller are populated
-                    // And specifically check if this item belongs to the logged-in seller
-                    if (item.cycleId && item.cycleId.seller && item.cycleId.seller._id === userInfo._id) {
+                    // Make sure item.cycle and item.cycle.seller are populated objects
+                    // And specifically check if this item's cycle belongs to the logged-in seller
+                    // 👇️ CHANGED from item.cycleId to item.cycle below
+                    if (item.cycle && item.cycle.seller && item.cycle.seller._id === userInfo._id) {
                          allSoldItems.push({
                             orderId: order._id,
                             orderDate: order.createdAt,
                             customerName: order.user ? order.user.name : 'N/A',
                             customerEmail: order.user ? order.user.email : 'N/A',
-                            productBrand: item.cycleId.brand,
-                            productModel: item.cycleId.model,
+                            productBrand: item.cycle.brand, // 👇️ CHANGED from item.cycleId.brand
+                            productModel: item.cycle.model, // 👇️ CHANGED from item.cycleId.model
                             quantity: item.qty,
                             pricePerUnit: item.price,
                             totalItemPrice: item.qty * item.price,
