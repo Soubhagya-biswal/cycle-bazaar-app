@@ -6,7 +6,7 @@ import { CartContext } from '../context/CartContext'; // CartContext import kiya
 
 function CartPage() {
     // Ab hum state seedhe context se lenge
-    const { cartItems, removeFromCart } = useContext(CartContext);
+    const { cartItems, removeFromCart, updateCartItemQuantity } = useContext(CartContext);
      console.log('Cart items received in CartPage:', cartItems); // YEH NAYI LINE HAI
     const calculateSubtotal = () => {
         if (!cartItems) return 0;
@@ -44,9 +44,26 @@ function CartPage() {
                                         <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
                                     </Col>
                                     <Col md={2}>₹{item.cycleId.price}</Col>
-                                    <Col md={2}>
-                                        Quantity: {item.quantity}
-                                    </Col>
+                                    <Col md={2} className="d-flex align-items-center"> {/* flexbox ताकि बटन और टेक्स्ट एक लाइन में हों */}
+    <Button
+        variant="outline-secondary"
+        size="sm" // छोटे बटन के लिए
+        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity - 1)}
+        disabled={item.quantity === 1} // 1 से कम नहीं कर सकते
+        className="me-2" // थोड़ा मार्जिन राइट में
+    >
+        <i className="fa-solid fa-minus"></i> {/* Font Awesome Minus Icon */}
+    </Button>
+    {item.quantity}
+    <Button
+        variant="outline-secondary"
+        size="sm" // छोटे बटन के लिए
+        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity + 1)}
+        className="ms-2" // थोड़ा मार्जिन लेफ्ट में
+    >
+        <i className="fa-solid fa-plus"></i> {/* Font Awesome Plus Icon */}
+    </Button>
+</Col>
                                     <Col md={2}>
                                         <Button type="button" variant="light" onClick={() => removeFromCartHandler(item.cycleId._id)}>
                                             <i className="fas fa-trash"></i>

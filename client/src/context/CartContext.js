@@ -79,6 +79,32 @@ export const CartProvider = ({ children }) => {
             alert('Could not remove item from cart.');
         }
     };
+    const updateCartItemQuantity = async (cycleId, quantity) => {
+        if (!userInfo) {
+            alert('Please login to update cart items');
+            return;
+        }
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/update-quantity`, {
+                method: 'PUT', // PUT या PATCH रिक्वेस्ट आमतौर पर अपडेट के लिए इस्तेमाल होती है
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userInfo.token}`
+                },
+                body: JSON.stringify({ cycleId, quantity })
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to update item quantity');
+            }
+            const data = await res.json();
+            setCartItems(data.items); // अपडेटेड कार्ट आइटम्स को सेट करें
+            // alert('Cart quantity updated!'); // आप चाहें तो अलर्ट दिखा सकते हैं
+        } catch (error) {
+            console.error("Failed to update cart quantity:", error);
+            alert('Could not update cart quantity.');
+        }
+    };
        const saveShippingAddress = (data) => {
         localStorage.setItem('shippingAddress', JSON.stringify(data));
         setShippingAddress(data);
@@ -93,7 +119,7 @@ export const CartProvider = ({ children }) => {
     setCartItems([]);
 };
     return (
-<CartContext.Provider value={{ cartItems, shippingAddress,paymentMethod, addToCart, removeFromCart, saveShippingAddress,savePaymentMethod,clearCart }}>
+<CartContext.Provider value={{ cartItems, shippingAddress, paymentMethod, addToCart, removeFromCart, saveShippingAddress, savePaymentMethod, clearCart, updateCartItemQuantity }}>
             {children}
         </CartContext.Provider>
     );
