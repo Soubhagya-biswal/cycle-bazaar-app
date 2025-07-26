@@ -22,6 +22,7 @@ function CycleDetailsPage() {
     const [currentDisplayedPrice, setCurrentDisplayedPrice] = useState(0);
     const [currentDisplayedStock, setCurrentDisplayedStock] = useState(0);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
+
     const fetchCycle = useCallback(async () => {
         try {
             setLoading(true);
@@ -33,8 +34,12 @@ function CycleDetailsPage() {
             }
 
             setCycle(data);
+            // 👇️ START: NAYE VARIANT INITIALIZATION LOGIC YAHAN (already correct) 👇️
+            // Set initial displayed price and stock from the base cycle
             setCurrentDisplayedPrice(data.price);
             setCurrentDisplayedStock(data.stock);
+
+            // If variants exist, set default selected variant
             if (data.variants && data.variants.length > 0) {
                 // Set default to the first variant's color and size
                 setSelectedColor(data.variants[0].color || '');
@@ -50,12 +55,14 @@ function CycleDetailsPage() {
                 setSelectedSize('');
                 setSelectedVariantId(null);
             }
+            // 👆️ END: NAYE VARIANT INITIALIZATION LOGIC YAHAN (already correct) 👆️
+
             if (userInfo && userInfo.wishlist && userInfo.wishlist.includes(data._id)) {
                 setInWishlist(true);
             } else {
                 setInWishlist(false);
             }
-            
+
             if (userInfo && data.subscribers && data.subscribers.includes(userInfo._id)) {
                 setIsSubscribed(true);
             } else {
@@ -78,7 +85,9 @@ function CycleDetailsPage() {
     useEffect(() => {
         fetchCycle();
     }, [fetchCycle]);
-        useEffect(() => {
+
+    // 👇️ START: NAYA USEEFFECT FOR VARIANT SELECTION LOGIC YAHAN (already correct) 👇️
+    useEffect(() => {
         if (cycle && cycle.variants && cycle.variants.length > 0) {
             const chosenVariant = cycle.variants.find(
                 (v) => v.color === selectedColor && v.size === selectedSize
@@ -97,16 +106,19 @@ function CycleDetailsPage() {
             }
         }
     }, [selectedColor, selectedSize, cycle]);
+    // 👆️ END: NAYA USEEFFECT FOR VARIANT SELECTION LOGIC YAHAN (already correct) 👆️
+
 
     const addToCartHandler = () => {
-        if (cycle.stock > 0) { // Only add to cart if stock is available
+        // 👇️ NAYA: currentDisplayedStock check karein
+        if (currentDisplayedStock > 0) { // Only add to cart if stock is available
             console.log('Add to Cart button clicked!');
             addToCart(cycle._id, 1, selectedVariantId);
         } else {
             alert('This cycle is currently out of stock!');
         }
     };
-     const wishlistHandler = async () => {
+    const wishlistHandler = async () => {
         if (!userInfo) {
             alert('Please login to add items to your wishlist');
             return;
@@ -122,11 +134,11 @@ function CycleDetailsPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
-            
+
             // Local state (button ke liye) aur global state (refresh ke liye) dono ko update karo
             setInWishlist(!inWishlist);
-            updateWishlist(data.wishlist); 
-            
+            updateWishlist(data.wishlist);
+
             alert(data.message);
         } catch (error) {
             alert('Failed to update wishlist');
@@ -140,8 +152,8 @@ function CycleDetailsPage() {
         }
 
         const method = isSubscribed ? 'DELETE' : 'POST';
-        const successMessage = isSubscribed 
-            ? 'Successfully unsubscribed from notifications' 
+        const successMessage = isSubscribed
+            ? 'Successfully unsubscribed from notifications'
             : 'Successfully subscribed for stock notification';
 
         try {
@@ -151,7 +163,7 @@ function CycleDetailsPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
-            
+
             setIsSubscribed(!isSubscribed); // Toggle the subscription status
             alert(successMessage);
         } catch (error) {
@@ -165,8 +177,8 @@ function CycleDetailsPage() {
         }
 
         const method = isPriceSubscribed ? 'DELETE' : 'POST';
-        const successMessage = isPriceSubscribed 
-            ? 'Successfully unsubscribed from price drop alerts' 
+        const successMessage = isPriceSubscribed
+            ? 'Successfully unsubscribed from price drop alerts'
             : 'Successfully subscribed for price drop alerts';
 
         try {
@@ -176,7 +188,7 @@ function CycleDetailsPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
-            
+
             setIsPriceSubscribed(!isPriceSubscribed); // Toggle the subscription status
             alert(successMessage);
         } catch (error) {
@@ -227,7 +239,7 @@ function CycleDetailsPage() {
                 <Col md={6}>
                     <Image src={cycle.imageUrl} alt={cycle.model} fluid />
                 </Col>
-                <Col md={3}>
+                <Col md={3}> {/* This is the column for Brand, Model, Description, Variants */}
                     <ListGroup variant='flush'>
                         <ListGroup.Item>
                             <h3>{cycle.brand} {cycle.model}</h3>
@@ -239,6 +251,9 @@ function CycleDetailsPage() {
                         <ListGroup.Item>
                             Description: {cycle.description}
                         </ListGroup.Item>
+                        {/* --- END DESCRIPTION --- */}
+
+                        {/* 👇️ START: VARIANT SELECTION UI (already correct) 👇️ */}
                         {cycle.variants && cycle.variants.length > 0 && (
                             <>
                                 {/* Color Selection */}
@@ -288,54 +303,55 @@ function CycleDetailsPage() {
                                 </ListGroup.Item>
                             </>
                         )}
+                        {/* 👆️ END: VARIANT SELECTION UI (already correct) 👆️ */}
                     </ListGroup>
                 </Col>
-                <Col md={3}>
+                <Col md={3}> {/* This is the column for the Card (Price, Status, Buttons) */}
                     <Card>
                         <ListGroup variant='flush'>
+                            {/* 👇️ START: NAYA REVISED PRICE & STATUS DISPLAY FOR ALIGNMENT 👇️ */}
                             <ListGroup.Item>
-                                <Row>
-                                    <Col>Price:</Col>
-                                    <Col><strong>₹{currentDisplayedPrice.toFixed(2)}</strong></Col> {/* <-- Using currentDisplayedPrice */}
-                                </Row>
-                            </ListGroup.Item>
-                            {/* --- Display Stock Status --- */}
-                            <ListGroup.Item>
-                                <Row>
-                                    <Col>Status:</Col>
-                                    <Col>
-                                        {currentDisplayedStock > 0 ? 'In Stock' : 'Out Of Stock'} {/* <-- Using currentDisplayedStock */}
-                                    </Col>
-                                </Row>
-                            </ListGroup.Item>
-                            {/* --- END STOCK STATUS --- */}
-                            <ListGroup.Item className="d-grid gap-2">
-                                {currentDisplayedStock > 0 ? ( // <-- Change cycle.stock to currentDisplayedStock
-                                    <Button onClick={addToCartHandler} variant="primary" type='button'>
-                                        Add To Cart
-                                    </Button>
-                                ) : (
+                                <Row className="align-items-center mb-2">
+                                    <Col xs={5}>Price:</Col> {/* Label is not bold, value is */}
+                                    <Col xs={7} className="text-end text-nowrap"> {/* text-nowrap to prevent line breaks */}
+                                        <strong>₹{currentDisplayedPrice.toFixed(2)}</strong>
+                                    </Col>
+                                </Row>
+                                <Row className="align-items-center">
+                                    <Col xs={5}>Status:</Col> {/* Label is not bold, value is */}
+                                    <Col xs={7} className="text-end text-nowrap"> {/* text-nowrap to prevent line breaks */}
+                                        {currentDisplayedStock > 0 ? 'In Stock' : 'Out Of Stock'}
+                                    </Col>
+                                </Row>
+                            </ListGroup.Item>
+                            {/* 👆️ END: NAYA REVISED PRICE & STATUS DISPLAY 👆️ */}
+
+                            <ListGroup.Item className="d-grid gap-2"> {/* d-grid gap-2 for full-width buttons */}
+                                {currentDisplayedStock > 0 ? (
+                                    <Button onClick={addToCartHandler} variant="primary" type='button'>
+                                        Add To Cart
+                                    </Button>
+                                ) : (
                                     <Button
-    onClick={notifyMeHandler}
-    variant={isSubscribed ? "secondary" : "info"}
-    type='button'
->
-    {isSubscribed ? 'Subscribed ✓' : 'Notify Me When Available'}
-</Button>
+                                        onClick={notifyMeHandler}
+                                        variant={isSubscribed ? "secondary" : "info"}
+                                        type='button'
+                                    >
+                                        {isSubscribed ? 'Subscribed ✓' : 'Notify Me When Available'}
+                                    </Button>
                                 )}
                                 <Button onClick={wishlistHandler} variant="outline-danger" type='button'>
                                     <i className={inWishlist ? 'fas fa-heart' : 'far fa-heart'}></i>
                                     {inWishlist ? ' In Wishlist' : ' Add to Wishlist'}
-                                    
                                 </Button>
                                 <Button
-    onClick={priceDropSubscribeHandler}
-    variant={isPriceSubscribed ? "outline-secondary" : "outline-warning"}
-    type='button'
-    className="mt-2"
->
-    {isPriceSubscribed ? 'Subscribed to Price Drop' : 'Notify on Price Drop'}
-</Button>
+                                    onClick={priceDropSubscribeHandler}
+                                    variant={isPriceSubscribed ? "outline-secondary" : "outline-warning"}
+                                    type='button'
+                                    className="mt-2"
+                                >
+                                    {isPriceSubscribed ? 'Subscribed to Price Drop' : 'Notify on Price Drop'}
+                                </Button>
                             </ListGroup.Item>
                         </ListGroup>
                     </Card>
@@ -343,25 +359,25 @@ function CycleDetailsPage() {
             </Row>
             {/* NAYA SECTION: Reviews */}
             <Row className="mt-5">
-                
-<Col md={6}>
-  <h2>Reviews</h2>
-  {cycle.reviews && cycle.reviews.length > 0 ? (
-    <div className="review-container">
-      {cycle.reviews.map((review) => (
-        <div key={review._id} className="review-box">
-          <div className="review-author">{review.name}</div>
-          <div className="review-date">
-            {new Date(review.createdAt).toLocaleDateString()}
-          </div>
-          <div className="review-comment">{review.comment}</div>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <Alert variant="info">No Reviews Yet</Alert>
-  )}
-</Col>
+
+                <Col md={6}>
+                    <h2>Reviews</h2>
+                    {cycle.reviews && cycle.reviews.length > 0 ? (
+                        <div className="review-container">
+                            {cycle.reviews.map((review) => (
+                                <div key={review._id} className="review-box">
+                                    <div className="review-author">{review.name}</div>
+                                    <div className="review-date">
+                                        {new Date(review.createdAt).toLocaleDateString()}
+                                    </div>
+                                    <div className="review-comment">{review.comment}</div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <Alert variant="info">No Reviews Yet</Alert>
+                    )}
+                </Col>
 
                 <Col md={6}>
                     <h2>Write a Customer Review</h2>
