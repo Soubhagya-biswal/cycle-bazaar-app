@@ -1,13 +1,11 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/order.model.js';
-import User from '../models/user.model.js'; // Added for email functionality
-import sendEmail from '../utils/sendEmail.js'; // Added for email functionality
+import User from '../models/user.model.js'; 
+import sendEmail from '../utils/sendEmail.js'; 
 import Stripe from 'stripe';
 const stripe = new Stripe('sk_test_51QCAw7LLSgFDTQWj0k89K2TCpDmFss4dKJFug3Z84cThg9TUp2mWzjGPb34O14gyNWfZrp0xFyfMHg95mWPVn2r80066Tm0HsH');
 
-// @desc    Create new order
-// @route   POST /api/orders
-// @access  Private
+
 const addOrderItems = asyncHandler(async (req, res) => {
   const {
     orderItems,
@@ -24,14 +22,14 @@ const addOrderItems = asyncHandler(async (req, res) => {
     throw new Error('No order items');
     return;
   } else {
-    // Ensure individual item quantities and prices are numbers
+    
     const mappedOrderItems = orderItems.map((item) => ({
       ...item,
       qty: Number(item.qty),
       price: Number(item.price),
     }));
 
-    // Define the final prices to be saved to the order
+    
     const finalTaxPrice = 0;
     const finalShippingPrice = 0;
 
@@ -60,7 +58,7 @@ const createPaymentIntent = asyncHandler(async (req, res) => {
 
   if (order) {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(order.totalPrice * 100), // Amount in paise
+      amount: Math.round(order.totalPrice * 100), 
       currency: 'inr',
       metadata: { order_id: order._id.toString() },
     });
@@ -78,7 +76,7 @@ const getOrderById = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id).populate('user', 'name email');
 
   if (order) {
-    // --- Console.logs for debugging (can remove later) ---
+    
     console.log('--- Backend Check: Full Order Object ---');
     console.log(JSON.stringify(order, null, 2));
     console.log('--------------------------------------');
@@ -94,7 +92,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     } else {
         console.log('No order items found for this order.');
     }
-    // --- End debugging console.logs ---
+    
     res.json(order);
   } else {
     res.status(404);
@@ -102,9 +100,7 @@ const getOrderById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Get logged in user orders
-// @route   GET /api/orders/myorders
-// @access  Private
+
 const getMyOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
   res.json(orders);
@@ -138,25 +134,65 @@ const getAllOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({}).populate('user', 'id name email');
   res.json(orders);
 });
+const getSellerOrders = asyncHandler(async (req, res) => {
+    
+    const sellerId = req.user._id;
 
+    
+    const orders = await Order.find({})
+        .populate({
+            path: 'orderItems.cycleId', 
+            select: 'brand model price seller imageUrl', 
+            populate: { 
+                path: 'seller',
+                select: 'name' 
+            }
+        })
+        .populate('user', 'name email'); 
+
+    
+    const sellerSpecificOrders = orders.map(order => {
+        
+        const filteredItems = order.orderItems.filter(item => {
+            
+            return item.cycleId && item.cycleId.seller && item.cycleId.seller.toString() === sellerId.toString();
+        });
+
+        
+        if (filteredItems.length === 0) {
+            return null;
+        }
+
+        
+        const newItemsPrice = filteredItems.reduce((acc, item) => acc + item.qty * item.price, 0);
+
+        return {
+            ...order.toObject(), 
+            orderItems: filteredItems,
+            
+        };
+    }).filter(Boolean); 
+
+    res.json(sellerSpecificOrders);
+});
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   const { status } = req.body;
 
   if (order) {
-    const oldStatus = order.status; // Store old status
+    const oldStatus = order.status; 
 
     order.status = status;
 
     if (status === 'Delivered') {
       order.isDelivered = true;
       order.deliveredAt = Date.now();
-      // --- NAYA CODE YAHAN ADD KAREIN (returnDeadline set karne ke liye) ---
-      const returnWindowDays = 7; // Return window ke liye din (aap isko adjust kar sakte hain)
-      const returnDeadlineDate = new Date(order.deliveredAt); // Delivered date se calculate karein
+      
+      const returnWindowDays = 7; 
+      const returnDeadlineDate = new Date(order.deliveredAt); 
       returnDeadlineDate.setDate(returnDeadlineDate.getDate() + returnWindowDays);
-      order.returnDeadline = returnDeadlineDate; // Order ka returnDeadline set kiya
-      // --- NAYA CODE END ---
+      order.returnDeadline = returnDeadlineDate; 
+      
     } else {
       order.isDelivered = false;
       order.deliveredAt = undefined;
@@ -283,8 +319,7 @@ const requestOrderCancellation = asyncHandler(async (req, res) => {
 
     const updatedOrder = await order.save();
 
-    // Optional: Send an email to admin about the cancellation request
-    // (We can add this later)
+    
 
     res.json(updatedOrder);
   } else {
@@ -293,7 +328,7 @@ const requestOrderCancellation = asyncHandler(async (req, res) => {
   }
 });
 const manageCancellationRequest = asyncHandler(async (req, res) => {
-    const { action } = req.body; // action will be 'approve' or 'reject'
+    const { action } = req.body; 
     const order = await Order.findById(req.params.id).populate('user', 'name email');
 
     if (order && order.status === 'Cancellation Requested') {
@@ -305,7 +340,7 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
             order.cancellationDetails.status = 'Approved';
             emailSubject = `Your Order #${order._id} Cancellation has been Approved`;
 
-            // Stripe se payment hui ho toh refund logic
+            
             if (order.paymentMethod === 'Stripe' && order.isPaid) {
                 try {
                     const paymentIntentId = order.paymentResult.id;
@@ -327,10 +362,10 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
                     console.log('Stripe refund successful:', refund.id);
                 } catch (refundError) {
                     console.error('Stripe refund failed:', refundError);
-                    // Agar refund fail ho, tab bhi user ko email bhej do
+                    
                     emailMessage = `<p>Hi ${order.user.name},</p><p>Your cancellation for order #${order._id} is approved, but there was an issue processing your automated refund. Please contact support.</p>`;
                 }
-            } else { // Agar COD ya unpaid order hai
+            } else {
                 emailMessage = `
                     <p>Hi ${order.user.name},</p>
                     <p>Your cancellation request for order #${order._id} has been approved.</p>
@@ -338,7 +373,7 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
                 `;
             }
         } else if (action === 'reject') {
-            order.status = 'Processing'; // Status wapas 'Processing' kar do
+            order.status = 'Processing'; 
             order.cancellationDetails.status = 'Rejected';
             emailSubject = `Your Order #${order._id} Cancellation has been Rejected`;
             emailMessage = `
@@ -371,4 +406,4 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
         throw new Error('Order not found or no pending cancellation request.');
     }
 });
-export { addOrderItems, getOrderById, createPaymentIntent, updateOrderToPaid, getMyOrders, getAllOrders, updateOrderStatus, deleteOrder, requestOrderCancellation, manageCancellationRequest };
+export { addOrderItems, getOrderById, createPaymentIntent, updateOrderToPaid, getMyOrders, getAllOrders, updateOrderStatus, deleteOrder, requestOrderCancellation, manageCancellationRequest, getSellerOrders };

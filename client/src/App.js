@@ -30,6 +30,7 @@ import BecomeSellerPage from './components/BecomeSellerPage';
 import SellerApplicationListPage from './components/SellerApplicationListPage';
 import SellerProductListPage from './components/SellerProductListPage';
 import SellerProductForm from './components/SellerProductForm';
+import SellerDashboardPage from './components/SellerDashboardPage';
 
 
 
@@ -74,10 +75,9 @@ function App() {
             <Route path="/myreviews" element={<MyReviewsPage />} />
             <Route path="/become-seller" element={<BecomeSellerPage />} />
             <Route path="/seller/products" element={<SellerProductListPage />} />
-            {/* Seller: Create Product */}
             <Route path="/seller/product/create" element={<SellerProductForm />} />
-            {/* Seller: Edit Product (productId dynamic parameter hai) */}
             <Route path="/seller/product/:id/edit" element={<SellerProductForm />} />
+            <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
           </Routes>
         </Container>
       </main>
