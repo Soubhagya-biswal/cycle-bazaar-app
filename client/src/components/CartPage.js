@@ -9,13 +9,24 @@ function CartPage() {
     const { cartItems, removeFromCart, updateCartItemQuantity } = useContext(CartContext);
      console.log('Cart items received in CartPage:', cartItems); // YEH NAYI LINE HAI
     const calculateSubtotal = () => {
-        if (!cartItems) return 0;
-        return cartItems.reduce((acc, item) => acc + item.quantity * item.cycleId.price, 0).toFixed(2);
-    };
+        if (!cartItems) return 0;
+        return cartItems.reduce((acc, item) => {
+            // 👇️ NAYA: Variant ki price calculate karein
+            const basePrice = item.cycleId.price;
+            const chosenVariant = item.variantId // Agar item mein variantId hai
+                ? item.cycleId.variants.find(v => v._id === item.variantId) // to us variant ko dhoondo
+                : null; // warna null
 
-    const removeFromCartHandler = (id) => {
+            const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
+            // 👆️ NAYA: Variant ki price calculate karein
+            return acc + item.quantity * effectivePrice;
+        }, 0).toFixed(2);
+    };
+
+    const removeFromCartHandler = (cycleId, variantId = null) => { // 👇️ NAYA: 'variantId' parameter add kiya
         if (window.confirm('Are you sure you want to remove this item?')) {
-            removeFromCart(id);
+            // 👇️ NAYA: 'variantId' bhi pass karein
+            removeFromCart(cycleId, variantId);
         }
     };
        const navigate = useNavigate();
@@ -42,27 +53,50 @@ function CartPage() {
                                     </Col>
                                     <Col md={3}>
                                         <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
+                                        {/* 👇️ START: NAYA VARIANT DETAILS DISPLAY YAHAN 👇️ */}
+                                        {item.variantId && item.cycleId.variants && item.cycleId.variants.length > 0 && (
+                                            (() => { // IIFE to find the variant details
+                                                const chosenVariant = item.cycleId.variants.find(
+                                                    v => v._id === item.variantId
+                                                );
+                                                return chosenVariant ? (
+                                                    <div style={{ fontSize: '0.8em', color: '#6c757d' }}>
+                                                        ({chosenVariant.color} - {chosenVariant.size})
+                                                    </div>
+                                                ) : null;
+                                            })()
+                                        )}
                                     </Col>
-                                    <Col md={2}>₹{item.cycleId.price}</Col>
+                                    <Col md={2}>₹{item.cycleId.price}
+                                        {/* 👇️ NAYA: Price display adjusted for variant additionalPrice 👇️ */}
+                                        {(() => { // IIFE to calculate price
+                                            const basePrice = item.cycleId.price;
+                                            const chosenVariant = item.variantId
+                                                ? item.cycleId.variants.find(v => v._id === item.variantId)
+                                                : null;
+                                            const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
+                                            return `₹${effectivePrice.toFixed(2)}`;
+                                        })()}
+                                    </Col>
                                     <Col md={2} className="d-flex align-items-center"> {/* flexbox ताकि बटन और टेक्स्ट एक लाइन में हों */}
     <Button
-        variant="outline-secondary"
-        size="sm" // छोटे बटन के लिए
-        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity - 1)}
-        disabled={item.quantity === 1} // 1 से कम नहीं कर सकते
-        className="me-2" // थोड़ा मार्जिन राइट में
-    >
-        <i className="fa-solid fa-minus"></i> {/* Font Awesome Minus Icon */}
-    </Button>
-    {item.quantity}
-    <Button
-        variant="outline-secondary"
-        size="sm" // छोटे बटन के लिए
-        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity + 1)}
-        className="ms-2" // थोड़ा मार्जिन लेफ्ट में
-    >
-        <i className="fa-solid fa-plus"></i> {/* Font Awesome Plus Icon */}
-    </Button>
+        variant="outline-secondary"
+        size="sm" 
+        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity - 1, item.variantId)} // 👇️ NAYA: item.variantId add kiya
+        disabled={item.quantity === 1} 
+        className="me-2" 
+    >
+        <i className="fa-solid fa-minus"></i>
+    </Button>
+    {item.quantity}
+    <Button
+        variant="outline-secondary"
+        size="sm" 
+        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity + 1, item.variantId)} // 👇️ NAYA: item.variantId add kiya
+        className="ms-2" 
+    >
+        <i className="fa-solid fa-plus"></i>
+    </Button>
 </Col>
                                     <Col md={2}>
                                         <Button type="button" variant="light" onClick={() => removeFromCartHandler(item.cycleId._id)}>

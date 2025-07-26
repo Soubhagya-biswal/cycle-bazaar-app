@@ -1,56 +1,54 @@
 import express from 'express';
-import asyncHandler from 'express-async-handler'; // npm install express-async-handler if not already
-import Cycle from '../models/cycle.model.js'; // Your Cycle model
-import { protect, seller } from '../middleware/authMiddleware.js'; // protect and a new 'seller' middleware
+import asyncHandler from 'express-async-handler'; 
+import Cycle from '../models/cycle.model.js'; 
+import { protect, seller } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// @desc    Get all products for the logged-in seller
-// @route   GET /api/seller/products
-// @access  Private/Seller
+
 router.get('/', protect, seller, asyncHandler(async (req, res) => {
-    // req.user._id will come from the 'protect' middleware after token verification
+    
     const products = await Cycle.find({ seller: req.user._id });
     res.json(products);
 }));
   router.get('/:id', protect, seller, asyncHandler(async (req, res) => {
-    const cycle = await Cycle.findById(req.params.id); // Get product ID from URL parameters
+    const cycle = await Cycle.findById(req.params.id); 
 
-    if (cycle) { // If product is found
-        // Ensure the logged-in seller is the owner of this product
-        // This is a critical security check
+    if (cycle) { 
         if (cycle.seller.toString() !== req.user._id.toString()) {
-            res.status(401); // Unauthorized
+            res.status(401); 
             throw new Error('Not authorized: You do not own this product');
         }
-        res.json(cycle); // Send the product details to the frontend
-    } else { // If product is not found
-        res.status(404); // Not Found
+        res.json(cycle); 
+    } else { 
+        res.status(404); 
         throw new Error('Product not found');
     }
 }));
 
 router.post('/', protect, seller, asyncHandler(async (req, res) => {
-    // Frontend se product details lenge
+    
     const { brand, model, price, imageUrl, description, stock } = req.body;
 
-    // Basic validation
+    
     if (!brand || !model || !price || !description || stock === undefined || stock === null) {
         res.status(400);
         throw new Error('Please provide all required product details: brand, model, price, description, and stock.');
     }
+         const totalStock = variants.reduce((acc, variant) => acc + (variant.variantStock || 0), 0);
 
     const cycle = new Cycle({
         brand,
         model,
         price,
-        imageUrl: imageUrl || '/images/sample.jpg', // Default image if not provided
+        imageUrl: imageUrl || '/images/sample.jpg', 
         description,
         stock,
-        seller: req.user._id, // Logged-in seller will be the owner
+        seller: req.user._id, 
         numReviews: 0,
         rating: 0,
-        reviews: []
+        reviews: [],
+        variants
         
     });
 
@@ -61,15 +59,15 @@ router.post('/', protect, seller, asyncHandler(async (req, res) => {
 
 
 router.put('/:id', protect, seller, asyncHandler(async (req, res) => {
-    const { brand, model, price, imageUrl, description, stock } = req.body;
+    const { brand, model, price, imageUrl, description, variants } = req.body;
     const cycleId = req.params.id;
 
     const cycle = await Cycle.findById(cycleId);
 
     if (cycle) {
-        // Ensure the logged-in seller is the owner of this product
+        
         if (cycle.seller.toString() !== req.user._id.toString()) {
-            res.status(401); // Unauthorized
+            res.status(401); 
             throw new Error('You are not authorized to update this product');
         }
 
@@ -78,7 +76,15 @@ router.put('/:id', protect, seller, asyncHandler(async (req, res) => {
         cycle.price = price || cycle.price;
         cycle.imageUrl = imageUrl || cycle.imageUrl;
         cycle.description = description || cycle.description;
-        cycle.stock = stock !== undefined && stock !== null ? stock : cycle.stock; // Handle 0 stock correctly
+        if (variants && Array.isArray(variants)) {
+            cycle.variants = variants;
+            
+            cycle.stock = variants.reduce((acc, variant) => acc + (variant.variantStock || 0), 0);
+        } else {
+            
+            res.status(400);
+            throw new Error('Variants must be provided as a valid array.');
+        }
 
         const updatedCycle = await cycle.save();
         res.json(updatedCycle);
@@ -88,20 +94,16 @@ router.put('/:id', protect, seller, asyncHandler(async (req, res) => {
         throw new Error('Product not found');
     }
 }));
-
-// @desc    Delete a product
-// @route   DELETE /api/seller/products/:id
-// @access  Private/Seller
 router.delete('/:id', protect, seller, asyncHandler(async (req, res) => {
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
-        // Ensure the logged-in seller is the owner of this product
+        
         if (cycle.seller.toString() !== req.user._id.toString()) {
-            res.status(401); // Unauthorized
+            res.status(401); 
             throw new Error('You are not authorized to delete this product');
         }
-        await cycle.deleteOne(); // Use deleteOne()
+        await cycle.deleteOne(); 
         res.json({ message: 'Product removed' });
     } else {
         res.status(404);

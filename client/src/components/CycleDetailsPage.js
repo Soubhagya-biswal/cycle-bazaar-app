@@ -17,7 +17,11 @@ function CycleDetailsPage() {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [reviewError, setReviewError] = useState('');
-
+    const [selectedColor, setSelectedColor] = useState('');
+    const [selectedSize, setSelectedSize] = useState('');
+    const [currentDisplayedPrice, setCurrentDisplayedPrice] = useState(0);
+    const [currentDisplayedStock, setCurrentDisplayedStock] = useState(0);
+    const [selectedVariantId, setSelectedVariantId] = useState(null);
     const fetchCycle = useCallback(async () => {
         try {
             setLoading(true);
@@ -29,6 +33,23 @@ function CycleDetailsPage() {
             }
 
             setCycle(data);
+            setCurrentDisplayedPrice(data.price);
+            setCurrentDisplayedStock(data.stock);
+            if (data.variants && data.variants.length > 0) {
+                // Set default to the first variant's color and size
+                setSelectedColor(data.variants[0].color || '');
+                setSelectedSize(data.variants[0].size || '');
+                // Also set the initial variant ID
+                setSelectedVariantId(data.variants[0]._id);
+                // Update price and stock based on this first variant
+                setCurrentDisplayedPrice(data.price + (data.variants[0].additionalPrice || 0));
+                setCurrentDisplayedStock(data.variants[0].variantStock);
+            } else {
+                // Agar variants nahi hain, to default values empty rakhen
+                setSelectedColor('');
+                setSelectedSize('');
+                setSelectedVariantId(null);
+            }
             if (userInfo && userInfo.wishlist && userInfo.wishlist.includes(data._id)) {
                 setInWishlist(true);
             } else {
@@ -57,13 +78,30 @@ function CycleDetailsPage() {
     useEffect(() => {
         fetchCycle();
     }, [fetchCycle]);
+        useEffect(() => {
+        if (cycle && cycle.variants && cycle.variants.length > 0) {
+            const chosenVariant = cycle.variants.find(
+                (v) => v.color === selectedColor && v.size === selectedSize
+            );
 
-
+            if (chosenVariant) {
+                setCurrentDisplayedPrice(cycle.price + (chosenVariant.additionalPrice || 0));
+                setCurrentDisplayedStock(chosenVariant.variantStock);
+                setSelectedVariantId(chosenVariant._id); // Update selected variant ID
+            } else {
+                // Agar selected combination nahi mila (invalid selection), to base price aur stock dikhao
+                // Ya error message dikhao
+                setCurrentDisplayedPrice(cycle.price);
+                setCurrentDisplayedStock(0); // Assuming 0 stock if variant not found
+                setSelectedVariantId(null);
+            }
+        }
+    }, [selectedColor, selectedSize, cycle]);
 
     const addToCartHandler = () => {
         if (cycle.stock > 0) { // Only add to cart if stock is available
             console.log('Add to Cart button clicked!');
-            addToCart(cycle._id, 1);
+            addToCart(cycle._id, 1, selectedVariantId);
         } else {
             alert('This cycle is currently out of stock!');
         }
@@ -201,34 +239,82 @@ function CycleDetailsPage() {
                         <ListGroup.Item>
                             Description: {cycle.description}
                         </ListGroup.Item>
-                        {/* --- END DESCRIPTION --- */}
+                        {cycle.variants && cycle.variants.length > 0 && (
+                            <>
+                                {/* Color Selection */}
+                                <ListGroup.Item>
+                                    <Row className="align-items-center">
+                                        <Col>Color:</Col>
+                                        <Col>
+                                            <Form.Control
+                                                as="select"
+                                                value={selectedColor}
+                                                onChange={(e) => setSelectedColor(e.target.value)}
+                                            >
+                                                {/* Unique colors option */}
+                                                {[...new Set(cycle.variants.map(v => v.color))].map(
+                                                    (colorOption) => (
+                                                        <option key={colorOption} value={colorOption}>
+                                                            {colorOption}
+                                                        </option>
+                                                    )
+                                                )}
+                                            </Form.Control>
+                                        </Col>
+                                    </Row>
+                                </ListGroup.Item>
+
+                                {/* Size Selection */}
+                                <ListGroup.Item>
+                                    <Row className="align-items-center">
+                                        <Col>Size:</Col>
+                                        <Col>
+                                            <Form.Control
+                                                as="select"
+                                                value={selectedSize}
+                                                onChange={(e) => setSelectedSize(e.target.value)}
+                                            >
+                                                {/* Filter sizes by selected color */}
+                                                {cycle.variants
+                                                    .filter(v => v.color === selectedColor)
+                                                    .map((sizeOption) => (
+                                                        <option key={sizeOption.size} value={sizeOption.size}>
+                                                            {sizeOption.size}
+                                                        </option>
+                                                    ))}
+                                            </Form.Control>
+                                        </Col>
+                                    </Row>
+                                </ListGroup.Item>
+                            </>
+                        )}
                     </ListGroup>
                 </Col>
                 <Col md={3}>
                     <Card>
                         <ListGroup variant='flush'>
                             <ListGroup.Item>
-                                <Row>
-                                    <Col>Price:</Col>
-                                    <Col><strong>₹{cycle.price}</strong></Col>
-                                </Row>
-                            </ListGroup.Item>
-                            {/* --- Display Stock Status --- */}
-                            <ListGroup.Item>
-                                <Row>
-                                    <Col>Status:</Col>
-                                    <Col>
-                                        {cycle.stock > 0 ? 'In Stock' : 'Out Of Stock'}
-                                    </Col>
-                                </Row>
-                            </ListGroup.Item>
+                                <Row>
+                                    <Col>Price:</Col>
+                                    <Col><strong>₹{currentDisplayedPrice.toFixed(2)}</strong></Col> {/* <-- Using currentDisplayedPrice */}
+                                </Row>
+                            </ListGroup.Item>
+                            {/* --- Display Stock Status --- */}
+                            <ListGroup.Item>
+                                <Row>
+                                    <Col>Status:</Col>
+                                    <Col>
+                                        {currentDisplayedStock > 0 ? 'In Stock' : 'Out Of Stock'} {/* <-- Using currentDisplayedStock */}
+                                    </Col>
+                                </Row>
+                            </ListGroup.Item>
                             {/* --- END STOCK STATUS --- */}
                             <ListGroup.Item className="d-grid gap-2">
-                                {cycle.stock > 0 ? (
-                                    <Button onClick={addToCartHandler} variant="primary" type='button'>
-                                        Add To Cart
-                                    </Button>
-                                ) : (
+                                {currentDisplayedStock > 0 ? ( // <-- Change cycle.stock to currentDisplayedStock
+                                    <Button onClick={addToCartHandler} variant="primary" type='button'>
+                                        Add To Cart
+                                    </Button>
+                                ) : (
                                     <Button
     onClick={notifyMeHandler}
     variant={isSubscribed ? "secondary" : "info"}

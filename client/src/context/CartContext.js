@@ -36,7 +36,8 @@ export const CartProvider = ({ children }) => {
         fetchCartItems();
     }, [userInfo]);
 
-    const addToCart = async (cycleId, quantity) => {
+    // 👇️ NAYA: 'variantId' parameter add kiya
+    const addToCart = async (cycleId, quantity, variantId = null) => { // third parameter for variantId
         if (!userInfo) {
             alert('Please login to add items to the cart');
             return;
@@ -48,7 +49,8 @@ export const CartProvider = ({ children }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${userInfo.token}`
                 },
-                body: JSON.stringify({ cycleId, quantity })
+                // 👇️ NAYA: 'variantId' ko JSON body mein add kiya
+                body: JSON.stringify({ cycleId, quantity, variantId })
             });
             if (!res.ok) {
                 throw new Error('Failed to add item to cart');
@@ -62,7 +64,7 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    const removeFromCart = async (cycleId) => {
+    const removeFromCart = async (cycleId, variantId = null) => { // Add variantId here
         try {
             const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/remove/${cycleId}`, {
                 method: 'DELETE',
@@ -79,27 +81,26 @@ export const CartProvider = ({ children }) => {
             alert('Could not remove item from cart.');
         }
     };
-    const updateCartItemQuantity = async (cycleId, quantity) => {
+    const updateCartItemQuantity = async (cycleId, quantity, variantId = null) => {
         if (!userInfo) {
             alert('Please login to update cart items');
             return;
         }
         try {
             const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/update-quantity`, {
-                method: 'PUT', // PUT या PATCH रिक्वेस्ट आमतौर पर अपडेट के लिए इस्तेमाल होती है
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${userInfo.token}`
                 },
-                body: JSON.stringify({ cycleId, quantity })
+                body: JSON.stringify({ cycleId, quantity, variantId })
             });
 
             if (!res.ok) {
                 throw new Error('Failed to update item quantity');
             }
             const data = await res.json();
-            setCartItems(data.items); // अपडेटेड कार्ट आइटम्स को सेट करें
-            // alert('Cart quantity updated!'); // आप चाहें तो अलर्ट दिखा सकते हैं
+            setCartItems(data.items);
         } catch (error) {
             console.error("Failed to update cart quantity:", error);
             alert('Could not update cart quantity.');

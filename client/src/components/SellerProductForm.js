@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // To get userInfo and token
 
 function SellerProductForm() {
-    const { id: productId } = useParams(); // URL se product ID lenge agar edit mode hai
+    const { id: productId } = useParams(); 
     const navigate = useNavigate();
     const { userInfo } = useContext(AuthContext);
 
@@ -13,7 +13,8 @@ function SellerProductForm() {
     const [price, setPrice] = useState(0);
     const [imageUrl, setImageUrl] = useState('');
     const [description, setDescription] = useState('');
-    const [stock, setStock] = useState(0);
+    const [variants, setVariants] = useState([]); 
+    
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -46,13 +47,14 @@ function SellerProductForm() {
                         throw new Error(data.message || 'Failed to fetch product details');
                     }
 
-                    // Populate form fields with existing product data
+                    
                     setBrand(data.brand);
                     setModel(data.model);
                     setPrice(data.price);
                     setImageUrl(data.imageUrl);
                     setDescription(data.description);
-                    setStock(data.stock);
+                    setVariants(data.variants || []); 
+                    
 
                 } catch (err) {
                     setError(err.message || 'Error loading product for editing.');
@@ -71,7 +73,8 @@ function SellerProductForm() {
         setError('');
         setMessage('');
 
-        const productData = { brand, model, price, imageUrl, description, stock };
+       
+        const productData = { brand, model, price, imageUrl, description, variants };
         let url = `${process.env.REACT_APP_API_BASE_URL}/api/seller/products`;
         let method = 'POST';
 
@@ -174,18 +177,108 @@ function SellerProductForm() {
                             />
                         </Form.Group>
 
-                        <Form.Group controlId="stock" className="mb-3">
-                            <Form.Label>Stock</Form.Label>
-                            <Form.Control
-                                type="number"
-                                placeholder="Enter stock quantity"
-                                value={stock}
-                                onChange={(e) => setStock(Number(e.target.value))}
-                                required
-                                min="0"
-                            />
-                        </Form.Group>
+                        <h4 className="mt-4">Product Variants</h4>
+                        <p className="text-muted">Define different colors, sizes, or types for this product.</p>
 
+                        {variants.length === 0 && (
+                            <Alert variant="info">No variants added yet. Click "Add Variant" to begin.</Alert>
+                        )}
+
+                        {variants.map((variant, index) => (
+                            <div key={index} className="mb-3 p-3 border rounded"> {/* Unique key for each variant */}
+                                <Row className="mb-2 align-items-end">
+                                    <Col md={5}>
+                                        <Form.Group controlId={`variantColor${index}`}>
+                                            <Form.Label>Color</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="e.g., Red, Blue"
+                                                value={variant.color || ''}
+                                                onChange={(e) => {
+                                                    const newVariants = [...variants];
+                                                    newVariants[index].color = e.target.value;
+                                                    setVariants(newVariants);
+                                                }}
+                                                required
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={5}>
+                                        <Form.Group controlId={`variantSize${index}`}>
+                                            <Form.Label>Size</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="e.g., 26-inch, Large"
+                                                value={variant.size || ''}
+                                                onChange={(e) => {
+                                                    const newVariants = [...variants];
+                                                    newVariants[index].size = e.target.value;
+                                                    setVariants(newVariants);
+                                                }}
+                                                required
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={2} className="d-flex justify-content-end">
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => {
+                                                const newVariants = variants.filter((_, i) => i !== index);
+                                                setVariants(newVariants);
+                                            }}
+                                        >
+                                            Remove
+                                        </Button>
+                                    </Col>
+                                </Row>
+
+                                <Row>
+                                    <Col md={6}>
+                                        <Form.Group controlId={`variantAdditionalPrice${index}`}>
+                                            <Form.Label>Additional Price (₹)</Form.Label>
+                                            <Form.Control
+                                                type="number"
+                                                placeholder="e.g., 500 (extra cost)"
+                                                value={variant.additionalPrice || 0}
+                                                onChange={(e) => {
+                                                    const newVariants = [...variants];
+                                                    newVariants[index].additionalPrice = Number(e.target.value);
+                                                    setVariants(newVariants);
+                                                }}
+                                                required
+                                                min="0"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group controlId={`variantStock${index}`}>
+                                            <Form.Label>Stock for this Variant</Form.Label>
+                                            <Form.Control
+                                                type="number"
+                                                placeholder="e.g., 10"
+                                                value={variant.variantStock || 0}
+                                                onChange={(e) => {
+                                                    const newVariants = [...variants];
+                                                    newVariants[index].variantStock = Number(e.target.value);
+                                                    setVariants(newVariants);
+                                                }}
+                                                required
+                                                min="0"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+                            </div>
+                        ))}
+
+                        <Button
+                            variant="outline-primary"
+                            className="w-100 mt-2"
+                            onClick={() => setVariants([...variants, { color: '', size: '', additionalPrice: 0, variantStock: 0 }])}
+                        >
+                            Add Variant
+                        </Button>
                         <Button type="submit" variant="primary" className="w-100 mt-3" disabled={loading}>
                             {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Product' : 'Create Product')}
                         </Button>

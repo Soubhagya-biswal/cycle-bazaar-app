@@ -16,6 +16,15 @@ const cartSchema = new mongoose.Schema({
                 ref: 'Cycle',
                 required: true
             },
+            variantId: {
+                type: mongoose.Schema.Types.ObjectId,
+                // It's not a direct 'ref' to a top-level model,
+                // but refers to an _id within the 'variants' array of a 'Cycle'.
+                // Mongoose can sometimes populate subdocuments if the main ref is correct.
+                // It should be required if product has variants, but optional if not.
+                // For simplicity, we'll make it not required at schema level for now.
+                required: false // Not all cycles will have variants, so make it optional
+            },
             quantity: {
                 type: Number,
                 required: true,

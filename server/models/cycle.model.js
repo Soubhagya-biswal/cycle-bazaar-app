@@ -51,7 +51,15 @@ stock: {
   default: 0,     
   min: 0         
 },
-  
+   variants: [ 
+        {
+            color: { type: String, trim: true },
+            size: { type: String, trim: true }, 
+            additionalPrice: { type: Number, required: true, default: 0 }, 
+            variantStock: { type: Number, required: true, default: 0, min: 0 }, 
+            
+        },
+    ],
 subscribers: [
     {
       type: mongoose.Schema.Types.ObjectId,

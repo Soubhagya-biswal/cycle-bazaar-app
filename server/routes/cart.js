@@ -19,26 +19,66 @@ router.route('/').get(protect, async (req, res) => {
 });
 
 // POST to add an item to the cart
+// POST to add an item to the cart
 router.route('/add').post(protect, async (req, res) => {
-    const { cycleId, quantity } = req.body;
+    // 👇️ NAYA: 'variantId' ko req.body se nikala
+    const { cycleId, quantity, variantId } = req.body;
     const userId = req.user._id;
+
     try {
         let cart = await Cart.findOne({ userId });
+
         if (cart) {
-            const itemIndex = cart.items.findIndex(p => p.cycleId.toString() === cycleId);
+            // 👇️ NAYA: itemIndex dhoondhte samay 'variantId' ko bhi check karein
+            // Agar variantId bheja gaya hai, to cycleId aur variantId dono match hone chahiye
+            // Agar variantId nahi bheja gaya hai, to sirf cycleId match hona chahiye aur variantId bhi na ho (null/undefined)
+            const itemIndex = cart.items.findIndex(p =>
+                p.cycleId.toString() === cycleId &&
+                (variantId ? (p.variantId && p.variantId.toString() === variantId) : !p.variantId)
+            );
+
             if (itemIndex > -1) {
+                // Item cart mein maujood hai (same cycleId aur same variantId)
                 cart.items[itemIndex].quantity += quantity;
             } else {
-                cart.items.push({ cycleId, quantity });
+                // Item cart mein nahi hai, naya item add karein
+                // 👇️ NAYA: 'variantId' ko items.push mein add kiya
+                cart.items.push({ cycleId, quantity, variantId });
             }
         } else {
-            cart = new Cart({ userId, items: [{ cycleId, quantity }] });
+            // Naya cart banayein
+            // 👇️ NAYA: 'variantId' ko naye cart item mein add kiya
+            cart = new Cart({ userId, items: [{ cycleId, quantity, variantId }] });
         }
+
         await cart.save();
-        await cart.populate('items.cycleId');
+
+        // 👇️ NAYA: Populate karte samay variant details bhi populate karein
+        // Aage jaakar hum CartPage mein bhi variants display karna chahenge
+        await cart.populate({
+            path: 'items.cycleId', // cycleId ko populate karein
+            select: 'brand model price imageUrl variants', // variants field ko bhi select karein
+            populate: {
+                path: 'items.cycleId.variants._id', // Isko populate karne ki zaroorat nahi hai, yeh sirf subdocument ka _id hai
+                // actually, CartPage mein cycleId.variants se variant details extract kiye ja sakte hain
+                // cart.populate('items.cycleId') se Cycle model populate hoga, uske andar variants array aa jayega.
+                // Uske baad frontend mein items.cycleId.variants se match karke variant details lenge.
+            }
+        });
+        // Populate items.cycleId with variants, then populate the specific variant if variantId is present
+        await cart.populate({
+            path: 'items.cycleId', // Populate the cycle object first
+            select: 'brand model price imageUrl variants' // Make sure 'variants' field is selected
+        });
+
+        // Ab aapke cart mein items.cycleId populated hoga, jiske andar variants array hoga.
+        // Frontend mein ab aap cycleId.variants array ko iterate karke item.variantId se match kar sakte hain
+        // to retrieve the specific variant's details (color, size, additionalPrice etc.)
+
         return res.status(201).send(cart);
     } catch (err) {
-        res.status(500).send("Something went wrong");
+        console.error("Error adding to cart:", err); // Better error logging
+        res.status(500).send("Something went wrong while adding to cart.");
     }
 });
 
@@ -61,36 +101,38 @@ router.route('/remove/:itemId').delete(protect, async (req, res) => {
     }
 });
 router.put('/update-quantity', protect, async (req, res) => {
-    const { cycleId, quantity } = req.body; 
-    const userId = req.user._id; 
+    const { cycleId, quantity, variantId } = req.body;
+    const userId = req.user._id;
 
     try {
-        let cart = await Cart.findOne({ userId }); 
+        let cart = await Cart.findOne({ userId });
 
         if (!cart) {
-           
             return res.status(404).json({ message: 'Cart not found for this user' });
         }
 
-       
-        const itemIndex = cart.items.findIndex(item => item.cycleId.toString() === cycleId);
+        const itemIndex = cart.items.findIndex(item =>
+            item.cycleId.toString() === cycleId &&
+            (variantId ? (item.variantId && item.variantId.toString() === variantId) : !item.variantId)
+        );
 
         if (itemIndex > -1) {
-            
             if (quantity <= 0) {
-                
                 cart.items.splice(itemIndex, 1);
             } else {
-                
                 cart.items[itemIndex].quantity = quantity;
             }
-            await cart.save(); 
+            await cart.save();
 
-            
-            await cart.populate({ path: 'items.cycleId', select: 'model brand price imageUrl' });
-            return res.json(cart); 
+            // 👇️ THIS IS THE EXACT PLACE. REPLACE THE OLD POPULATE LINE WITH THIS BLOCK 👇️
+            await cart.populate({
+                path: 'items.cycleId',
+                select: 'model brand price imageUrl variants' // 'variants' field ko bhi select karein
+            });
+            // 👆️ END OF REPLACE BLOCK 👆️
+
+            return res.json(cart);
         } else {
-           
             return res.status(404).json({ message: 'Item not found in cart' });
         }
 
