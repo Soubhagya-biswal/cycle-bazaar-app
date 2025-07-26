@@ -13,10 +13,23 @@ router.get('/', protect, seller, asyncHandler(async (req, res) => {
     const products = await Cycle.find({ seller: req.user._id });
     res.json(products);
 }));
+  router.get('/:id', protect, seller, asyncHandler(async (req, res) => {
+    const cycle = await Cycle.findById(req.params.id); // Get product ID from URL parameters
 
-// @desc    Create a new product
-// @route   POST /api/seller/products
-// @access  Private/Seller
+    if (cycle) { // If product is found
+        // Ensure the logged-in seller is the owner of this product
+        // This is a critical security check
+        if (cycle.seller.toString() !== req.user._id.toString()) {
+            res.status(401); // Unauthorized
+            throw new Error('Not authorized: You do not own this product');
+        }
+        res.json(cycle); // Send the product details to the frontend
+    } else { // If product is not found
+        res.status(404); // Not Found
+        throw new Error('Product not found');
+    }
+}));
+
 router.post('/', protect, seller, asyncHandler(async (req, res) => {
     // Frontend se product details lenge
     const { brand, model, price, imageUrl, description, stock } = req.body;
@@ -38,17 +51,15 @@ router.post('/', protect, seller, asyncHandler(async (req, res) => {
         numReviews: 0,
         rating: 0,
         reviews: []
-        // subscribers and priceDropSubscribers will be empty initially
+        
     });
 
     const createdCycle = await cycle.save();
-    res.status(201).json(createdCycle); // 201 for resource created
+    res.status(201).json(createdCycle); 
 
 }));
 
-// @desc    Update an existing product
-// @route   PUT /api/seller/products/:id
-// @access  Private/Seller
+
 router.put('/:id', protect, seller, asyncHandler(async (req, res) => {
     const { brand, model, price, imageUrl, description, stock } = req.body;
     const cycleId = req.params.id;
