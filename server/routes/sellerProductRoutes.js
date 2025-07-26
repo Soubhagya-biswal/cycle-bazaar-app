@@ -27,6 +27,9 @@ router.get('/', protect, seller, asyncHandler(async (req, res) => {
 }));
 
 router.post('/', protect, seller, asyncHandler(async (req, res) => {
+     console.log('--- Debug: Incoming Request Body for POST /seller/products ---');
+    console.log(req.body);
+    console.log('------------------------------------------------------------');
     
     const { brand, model, price, imageUrl, description, stock } = req.body;
 
