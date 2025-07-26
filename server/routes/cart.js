@@ -53,18 +53,12 @@ router.route('/add').post(protect, async (req, res) => {
 
         await cart.save();
 
-        // 👇️ NAYA: Populate karte samay variant details bhi populate karein
-        // Aage jaakar hum CartPage mein bhi variants display karna chahenge
-        await cart.populate({
-            path: 'items.cycleId', // cycleId ko populate karein
-            select: 'brand model price imageUrl variants', // variants field ko bhi select karein
-            populate: {
-                path: 'items.cycleId.variants._id', // Isko populate karne ki zaroorat nahi hai, yeh sirf subdocument ka _id hai
-                // actually, CartPage mein cycleId.variants se variant details extract kiye ja sakte hain
-                // cart.populate('items.cycleId') se Cycle model populate hoga, uske andar variants array aa jayega.
-                // Uske baad frontend mein items.cycleId.variants se match karke variant details lenge.
-            }
-        });
+        // 👇️ START: NAYA CORRECTED POPULATE BLOCK YAHAN 👇️
+        await cart.populate({
+            path: 'items.cycleId', // Correct: this populates the Cycle document itself
+            select: 'model brand price imageUrl variants' // Correct: select variants from the Cycle
+        });
+        // 👆️ END: NAYA CORRECTED POPULATE BLOCK YAHAN 👆️
         // Populate items.cycleId with variants, then populate the specific variant if variantId is present
         await cart.populate({
             path: 'items.cycleId', // Populate the cycle object first
