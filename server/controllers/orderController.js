@@ -141,7 +141,7 @@ const getSellerOrders = asyncHandler(async (req, res) => {
     
     const orders = await Order.find({})
         .populate({
-            path: 'orderItems.cycleId', 
+            path: 'orderItems.cycle',
             select: 'brand model price seller imageUrl', 
             populate: { 
                 path: 'seller',
@@ -155,7 +155,7 @@ const getSellerOrders = asyncHandler(async (req, res) => {
         
         const filteredItems = order.orderItems.filter(item => {
             
-            return item.cycleId && item.cycleId.seller && item.cycleId.seller.toString() === sellerId.toString();
+            return item.cycle && item.cycle.seller && item.cycle.seller._id.toString() === sellerId.toString(); 
         });
 
         
