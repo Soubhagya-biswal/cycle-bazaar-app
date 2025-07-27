@@ -42,9 +42,9 @@ const addCycle = asyncHandler(async (req, res) => {
         imageUrl,
         description,
         stock: Number(stock),
-        seller: req.user._id, // YEH LINE ADD KI GAYI HAI
-        rating: 0, 
-        numReviews: 0, // Naye cycle ke liye default values
+        seller: req.user._id, // YEH LINE ZAROORI HAI
+        rating: 0,
+        numReviews: 0,
     });
 
     const createdCycle = await newCycle.save();
@@ -230,7 +230,6 @@ const unsubscribeFromPriceDrop = asyncHandler(async (req, res) => {
     }
 });
 const createCycleReview = asyncHandler(async (req, res) => {
-    console.log('--- createCycleReview FUNCTION CALLED ---');
     const { rating, comment } = req.body;
     const cycle = await Cycle.findById(req.params.id);
 
@@ -252,26 +251,30 @@ const createCycleReview = asyncHandler(async (req, res) => {
         );
 
         if (alreadyReviewed) {
-            res.status(400);
-            throw new Error('You have already reviewed this product');
+            // Agar review pehle se hai, to use UPDATE karo
+            alreadyReviewed.rating = Number(rating);
+            alreadyReviewed.comment = comment;
+        } else {
+            // Agar review nahi hai, to naya BANAO
+            const review = {
+                name: req.user.name,
+                rating: Number(rating),
+                comment,
+                user: req.user._id,
+            };
+            cycle.reviews.push(review);
+            cycle.numReviews = cycle.reviews.length;
         }
 
-        const review = {
-            name: req.user.name,
-            rating: Number(rating),
-            comment,
-            user: req.user._id,
-        };
-
-        cycle.reviews.push(review);
-        cycle.numReviews = cycle.reviews.length;
+        // Dono cases (update ya naya) mein overall rating dobara calculate karo
         cycle.rating =
             cycle.reviews.reduce((acc, item) => item.rating + acc, 0) /
             cycle.reviews.length;
-            console.log('--- About to save cycle. Checking seller field: ---');
-        console.log(JSON.stringify(cycle, null, 2));
+
         await cycle.save();
-        res.status(201).json({ message: 'Review submitted successfully' });
+        
+        // Update hua ya naya bana, uske hisaab se message bhejo
+        res.status(201).json({ message: alreadyReviewed ? 'Review updated successfully' : 'Review added successfully' });
 
     } else {
         res.status(404);
