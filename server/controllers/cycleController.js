@@ -8,7 +8,7 @@ import sendEmail from '../utils/sendEmail.js';
 // @route   GET /cycles
 // @access  Public
 const getAllCycles = asyncHandler(async (req, res) => {
-    const pageSize = 12;
+    const pageSize = 8;
     const page = Number(req.query.pageNumber) || 1;
 
     // NAYA CODE: Search keyword ke liye logic
