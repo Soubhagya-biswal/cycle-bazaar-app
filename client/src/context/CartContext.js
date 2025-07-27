@@ -9,11 +9,10 @@ export const CartProvider = ({ children }) => {
     const paymentMethodFromStorage = localStorage.getItem('paymentMethod') ? JSON.parse(localStorage.getItem('paymentMethod')) : '';
     const [paymentMethod, setPaymentMethod] = useState(paymentMethodFromStorage);
     
-    // --- NAYA COUPON KA STATE ---
+    // --- COUPON KA NAYA STATE ---
     const couponFromStorage = localStorage.getItem('appliedCoupon') ? JSON.parse(localStorage.getItem('appliedCoupon')) : null;
     const [appliedCoupon, setAppliedCoupon] = useState(couponFromStorage);
-    // --- NAYA COUPON KA STATE END ---
-
+    
     const { userInfo } = useContext(AuthContext);
 
     useEffect(() => {
@@ -44,7 +43,7 @@ export const CartProvider = ({ children }) => {
     // --- NAYI PRICE CALCULATION LOGIC ---
     const { subtotal, discount, grandTotal } = useMemo(() => {
         const subtotalCalc = cartItems.reduce((acc, item) => {
-            if (!item.cycleId) return acc; // Agar cycleId null hai to skip karo
+            if (!item.cycleId) return acc;
             const basePrice = item.cycleId.price;
             const chosenVariant = item.variantId && item.cycleId.variants 
                 ? item.cycleId.variants.find(v => v._id === item.variantId) 
@@ -62,7 +61,7 @@ export const CartProvider = ({ children }) => {
             }
         }
         
-        discountCalc = Math.min(discountCalc, subtotalCalc); // Discount subtotal se zyada nahi ho sakta
+        discountCalc = Math.min(discountCalc, subtotalCalc);
         const grandTotalCalc = subtotalCalc - discountCalc;
 
         return {
@@ -71,18 +70,75 @@ export const CartProvider = ({ children }) => {
             grandTotal: grandTotalCalc
         };
     }, [cartItems, appliedCoupon]);
-    // --- NAYI PRICE CALCULATION LOGIC END ---
 
+    // --- TERA PURANA CODE (BILKUL WAISE KA WAISA) ---
     const addToCart = async (cycleId, quantity, variantId = null) => {
-        // ... (yeh function waisa hi hai, koi change nahi)
+        if (!userInfo) {
+            alert('Please login to add items to the cart');
+            return;
+        }
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userInfo.token}`
+                },
+                body: JSON.stringify({ cycleId, quantity, variantId })
+            });
+            if (!res.ok) {
+                throw new Error('Failed to add item to cart');
+            }
+            const data = await res.json();
+            setCartItems(data.items);
+            alert('Item added to cart!');
+        } catch (error) {
+            console.error(error);
+            alert('Could not add item to cart.');
+        }
     };
 
     const removeFromCart = async (cycleId, variantId = null) => {
-        // ... (yeh function waisa hi hai, koi change nahi)
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/remove/${cycleId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${userInfo.token}`
+                }
+            });
+            if (!res.ok) throw new Error('Failed to remove item');
+            const data = await res.json();
+            setCartItems(data.items);
+            alert('Item removed from cart');
+        } catch (error) {
+            console.error(error);
+            alert('Could not remove item from cart.');
+        }
     };
 
     const updateCartItemQuantity = async (cycleId, quantity, variantId = null) => {
-        // ... (yeh function waisa hi hai, koi change nahi)
+        if (!userInfo) {
+            alert('Please login to update cart items');
+            return;
+        }
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/update-quantity`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userInfo.token}`
+                },
+                body: JSON.stringify({ cycleId, quantity, variantId })
+            });
+            if (!res.ok) {
+                throw new Error('Failed to update item quantity');
+            }
+            const data = await res.json();
+            setCartItems(data.items);
+        } catch (error) {
+            console.error("Failed to update cart quantity:", error);
+            alert('Could not update cart quantity.');
+        }
     };
     
     const saveShippingAddress = (data) => {
@@ -94,6 +150,7 @@ export const CartProvider = ({ children }) => {
         localStorage.setItem('paymentMethod', JSON.stringify(data));
         setPaymentMethod(data);
     };
+    // --- TERA PURANA CODE KHATM ---
 
     // --- NAYE COUPON FUNCTIONS ---
     const applyCoupon = (couponData) => {
@@ -105,33 +162,31 @@ export const CartProvider = ({ children }) => {
         localStorage.removeItem('appliedCoupon');
         setAppliedCoupon(null);
     };
-    // --- NAYE COUPON FUNCTIONS END ---
 
     const clearCart = () => {
-        // ... iske andar clearCoupon() call karenge ...
+        localStorage.removeItem('cartItems'); // Yeh line tere code mein pehle se thi
         setCartItems([]);
         clearCoupon(); // Cart clear hone par coupon bhi हटा do
     };
 
-    // --- NAYI VALUE OBJECT ---
+    // --- NAYI VALUE OBJECT JO PROVIDER KO DI JAYEGI ---
     const value = {
         cartItems,
         shippingAddress,
         paymentMethod,
-        appliedCoupon, // Naya
-        subtotal,      // Naya
-        discount,      // Naya
-        grandTotal,    // Naya
+        appliedCoupon,
+        subtotal,
+        discount,
+        grandTotal,
         addToCart,
         removeFromCart,
         saveShippingAddress,
         savePaymentMethod,
         updateCartItemQuantity,
         clearCart,
-        applyCoupon,   // Naya
-        clearCoupon,   // Naya
+        applyCoupon,
+        clearCoupon,
     };
-    // --- NAYI VALUE OBJECT END ---
 
     return (
         <CartContext.Provider value={value}>

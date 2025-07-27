@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Row, Col, ListGroup, Image, Button, Card, Alert, Form } from 'react-bootstrap';
 import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext'; // AuthContext ko import kiya
+import { AuthContext } from '../context/AuthContext';
 
 function CartPage() {
     // Step 1: Sab kuch seedhe context se le rahe hain
@@ -149,7 +149,7 @@ function CartPage() {
                             <ListGroup.Item>
                                 <Row>
                                     <Col>Subtotal ({cartItems.reduce((acc, item) => acc + item.quantity, 0)} items)</Col>
-                                    <Col className="text-end">₹{subtotal.toFixed(2)}</Col>
+<Col className="text-end">₹{(subtotal || 0).toFixed(2)}</Col>
                                 </Row>
                             </ListGroup.Item>
                             
@@ -185,7 +185,7 @@ function CartPage() {
                                     <Row>
                                         <Col>Discount ({appliedCoupon.code})</Col>
                                         <Col className="text-end" style={{color: 'green'}}>
-                                            - ₹{discount.toFixed(2)}
+                                            - - ₹{(discount || 0).toFixed(2)}
                                         </Col>
                                     </Row>
                                 </ListGroup.Item>
@@ -194,7 +194,7 @@ function CartPage() {
                             <ListGroup.Item>
                                 <Row>
                                     <Col><strong>Grand Total</strong></Col>
-                                    <Col className="text-end"><strong>₹{grandTotal.toFixed(2)}</strong></Col>
+                                    <Col className="text-end"><strong>₹{(grandTotal || 0).toFixed(2)}</strong></Col>
                                 </Row>
                             </ListGroup.Item>
 

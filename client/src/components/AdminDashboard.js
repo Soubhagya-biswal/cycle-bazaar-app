@@ -233,7 +233,7 @@ function AdminDashboard() {
             </div>
       {/* Cycle List for Admin */}
       <div className="admin-cycle-list">
-        <h2>Manage Cycles</h2>
+        <h2>Manage Cycles ({cycles.length})</h2>
         {cycles.map(cycle => (
           <div key={cycle._id} className="admin-cycle-item">
             <span>{cycle.brand} {cycle.model}</span>
