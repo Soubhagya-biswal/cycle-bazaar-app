@@ -3,6 +3,7 @@ import Order from '../models/order.model.js';
 import User from '../models/user.model.js'; 
 import sendEmail from '../utils/sendEmail.js'; 
 import Stripe from 'stripe';
+import { calculateEstimatedDelivery } from '../utils/deliveryEstimator.js';
 const stripe = new Stripe('sk_test_51QCAw7LLSgFDTQWj0k89K2TCpDmFss4dKJFug3Z84cThg9TUp2mWzjGPb34O14gyNWfZrp0xFyfMHg95mWPVn2r80066Tm0HsH');
 
 
@@ -35,6 +36,8 @@ const addOrderItems = asyncHandler(async (req, res) => {
 
     const baseItemsPrice = Number(itemsPrice);
     const finalTotalPrice = baseItemsPrice + finalTaxPrice + finalShippingPrice;
+    const estimatedDate = await calculateEstimatedDelivery(shippingAddress.postalCode);
+    console.log(`Calculated Estimated Delivery Date: ${estimatedDate}`); 
 
     const order = new Order({
       orderItems: mappedOrderItems,
@@ -45,6 +48,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
       taxPrice: finalTaxPrice,
       shippingPrice: finalShippingPrice,
       totalPrice: finalTotalPrice,
+      estimatedDeliveryDate: estimatedDate,
     });
 
     const createdOrder = await order.save();

@@ -26,18 +26,18 @@ function OrderPage() {
     const [clientSecret, setClientSecret] = useState('');
     const [selectedStatus, setSelectedStatus] = useState('');
 
-    // --- NAYE STATE VARIABLES RETURN FUNCTIONALITY KE LIYE ---
-    const [showReturnForm, setShowReturnForm] = useState(false); // Return form ko dikhane/chhipane ke liye
-    const [returnReason, setReturnReason] = useState(''); // User dwara diya gaya return ka karan
-    const [returnMethod, setReturnMethod] = useState(''); // Refund ka tarika (e.g., Bank Transfer, Store Credit)
-    const [bankDetails, setBankDetails] = useState({ // Bank transfer ke liye details
+    
+    const [showReturnForm, setShowReturnForm] = useState(false);
+    const [returnReason, setReturnReason] = useState(''); 
+    const [returnMethod, setReturnMethod] = useState(''); 
+    const [bankDetails, setBankDetails] = useState({ 
       accountHolderName: '',
       accountNumber: '',
       ifscCode: '',
       bankName: ''
     });
-    const [returnRequestSuccess, setReturnRequestSuccess] = useState(false); // Return request successful hone par message
-    // --- NAYE STATE VARIABLES KA END ---
+    const [returnRequestSuccess, setReturnRequestSuccess] = useState(false); 
+    
 
 
     const fetchOrder = async () => {
@@ -53,19 +53,16 @@ function OrderPage() {
             setOrder(data);
             setSelectedStatus(data.status);
 
-            // --- NAYA LOGIC FOR RETURN WINDOW (Agar backend se returnDeadline nahi aa raha hai) ---
-            // Yahan hum return deadline ko frontend par calculate kar rahe hain,
-            // lekin ideally ye backend se hi aana chahiye jab order deliver ho.
+            
             if (data.status === 'Delivered' && !data.returnDeadline) {
-                 // Example: Agar database mein returnDeadline nahi hai, toh yahan calculate kar sakte hain
-                 // aur display kar sakte hain. Backend mein deliveredAt set hone par returnDeadline bhi set ho.
+                 
                 const deliveredDate = new Date(data.deliveredAt);
                 const calculatedReturnDeadline = new Date(deliveredDate);
-                calculatedReturnDeadline.setDate(deliveredDate.getDate() + 7); // 7 din ka return window example
-                data.returnDeadline = calculatedReturnDeadline.toISOString(); // Frontend use ke liye add kiya
-                setOrder(data); // Updated order state
+                calculatedReturnDeadline.setDate(deliveredDate.getDate() + 7); 
+                data.returnDeadline = calculatedReturnDeadline.toISOString(); 
+                setOrder(data);
             }
-            // --- NAYA LOGIC END ---
+            
 
             if (!data.isPaid && data.paymentMethod === 'Stripe' && !clientSecret) {
                 const paymentRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders/${orderId}/create-payment-intent`, {
@@ -122,7 +119,7 @@ function OrderPage() {
         }
     };
 
-    // --- MARK AS PAID HANDLER (JO GALTI SE REMOVE HO GAYA THA) ---
+    
     const markAsPaidHandler = async () => {
         try {
             setLoading(true);
@@ -139,7 +136,7 @@ function OrderPage() {
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to mark order as paid');
             }
-            fetchOrder(); // Order details ko refresh karo
+            fetchOrder(); 
             alert('Order marked as paid successfully!');
 
         } catch (err) {
@@ -148,7 +145,7 @@ function OrderPage() {
             setLoading(false);
         }
     };
-    // --- MARK AS PAID HANDLER END ---
+    
 
     const cancelOrderHandler = async () => {
         const reason = window.prompt("Please provide a reason for cancellation:");
@@ -170,7 +167,7 @@ function OrderPage() {
                 }
                 
                 alert('Cancellation request sent successfully!');
-                fetchOrder(); // Order details ko refresh karo
+                fetchOrder(); 
             } catch (error) {
                 setError(error.message);
                 setLoading(false);
@@ -178,7 +175,7 @@ function OrderPage() {
         }
     };
 
-    // --- NAYA HANDLER FUNCTION RETURN REQUEST KE LIYE ---
+   
     const requestReturnHandler = async () => {
         if (!returnReason || !returnMethod) {
             alert('Please select a reason and return method.');
@@ -194,13 +191,13 @@ function OrderPage() {
 
         try {
             setLoading(true);
-            setError(null); // Puraane errors clear karein
+            setError(null); 
 
             const payload = {
                 orderId: order._id,
                 reason: returnReason,
                 returnMethod: returnMethod,
-                // Bank details sirf tab bhejein jab return method 'Bank Transfer' ho
+                
                 bankDetails: returnMethod === 'Bank Transfer' ? bankDetails : undefined
             };
 
@@ -219,12 +216,12 @@ function OrderPage() {
                 throw new Error(data.message || 'Failed to send return request.');
             }
 
-            setReturnRequestSuccess(true); // Success message dikhane ke liye
-            setShowReturnForm(false); // Form hide karein
-            setReturnReason(''); // Fields reset karein
+            setReturnRequestSuccess(true); 
+            setShowReturnForm(false); 
+            setReturnReason(''); 
             setReturnMethod('');
-            setBankDetails({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '' }); // Bank details reset
-            fetchOrder(); // Order details ko refresh karein naye return status ke liye
+            setBankDetails({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '' }); 
+            fetchOrder(); 
 
         } catch (err) {
             setError(err.message);
@@ -233,7 +230,7 @@ function OrderPage() {
             setLoading(false);
         }
     };
-    // --- NAYA HANDLER FUNCTION KA END ---
+    
 
 
     return loading ? (
@@ -250,22 +247,33 @@ function OrderPage() {
                             <h2>Shipping</h2>
                             <p><strong>Name: </strong> {order.user.name}</p>
                             <p><strong>Email: </strong> <a href={`mailto:${order.user.email}`}>{order.user.email}</a></p>
-                            <p><strong>Address: </strong>{order.shippingAddress.address}, {order.shippingAddress.city}{' '}{order.shippingAddress.postalCode}, {order.shippingAddress.country}</p>
+                                    <p><strong>Address: </strong>{order.shippingAddress.address}, {order.shippingAddress.city}{' '}{order.shippingAddress.postalCode}, {order.shippingAddress.country}
+                                    </p>
+                                    {!order.isDelivered && order.estimatedDeliveryDate && (
+                                <Alert variant='info' className="mt-3">
+                                   Estimated Delivery By: <strong>{new Date(order.estimatedDeliveryDate).toLocaleDateString('en-IN', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    })}</strong>
+                                </Alert>
+                            )}
                             <Alert variant={
-                                order.status === 'Delivered' || order.status === 'Refund Processed' ? 'success' : // Refunded orders bhi green dikhenge
-                                order.status === 'Cancelled' || order.status === 'Return Rejected' ? 'danger' : // Rejected returns bhi red dikhenge
+                                order.status === 'Delivered' || order.status === 'Refund Processed' ? 'success' : 
+                                order.status === 'Cancelled' || order.status === 'Return Rejected' ? 'danger' : 
                                 'info'
                             }>
                                 Status: {order.status}
                                 {order.status === 'Delivered' && order.deliveredAt && (
                                     ` on ${new Date(order.deliveredAt).toLocaleString()}`
                                 )}
-                                {/* NAYA: Return Request Date dikhayein */}
+                                
                                 {order.status === 'Return Requested' && order.returnRequestDate && (
                                     ` (Requested on ${new Date(order.returnRequestDate).toLocaleDateString()})`
                                 )}
-                                {/* NAYA: Return Processed Date dikhayein */}
-                                {order.status === 'Refund Processed' && order.refundedAt && ( // Assuming refundedAt is used for general refunds
+                                
+                                {order.status === 'Refund Processed' && order.refundedAt && ( 
                                     ` (Processed on ${new Date(order.refundedAt).toLocaleDateString()})`
                                 )}
                             </Alert>
@@ -354,8 +362,7 @@ function OrderPage() {
                                 </ListGroup.Item>
                             )}
 
-                            {/* --- ADMIN STATUS UPDATE SECTION (CONDITIONAL RENDERING) --- */}
-                            {/* Ye section tab dikhega jab user admin ho AND woh admin list se aaya ho (query param ke through) */}
+                            
                             {userInfo && userInfo.isAdmin && isAdminView && (
                                 <ListGroup.Item>
                                     <h3>Update Status</h3>
@@ -367,7 +374,7 @@ function OrderPage() {
                                         disabled={loading}
                                     >
                                         <option value="Processing">Processing</option>
-                                        {/* Existing options */}
+                                        
                                         {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
                                             <>
                                                 <option value="Shipped">Shipped</option>
@@ -383,8 +390,6 @@ function OrderPage() {
                                         {order.status === 'Delivered' && <option value="Delivered">Delivered</option>}
                                         {order.status === 'Cancelled' && <option value="Cancelled">Cancelled</option>}
 
-                                        {/* --- NAYE OPTIONS FOR RETURN STATUSES (ADMIN KE LIYE) --- */}
-                                        {/* Ye options tabhi dikhenge jab order 'Delivered' ya return process mein ho */}
                                         {(order.status === 'Delivered' || order.status === 'Return Requested' || order.status === 'Return Approved' || order.status === 'Return Rejected' || order.status === 'Refund Processed') && (
                                             <>
                                                 <option value="Return Requested">Return Requested</option>
@@ -393,7 +398,7 @@ function OrderPage() {
                                                 <option value="Refund Processed">Refund Processed</option>
                                             </>
                                         )}
-                                        {/* --- NAYE OPTIONS KHATAM --- */}
+                                        
 
                                     </Form.Control>
                                     <Button
@@ -407,7 +412,7 @@ function OrderPage() {
                                 </ListGroup.Item>
                                     )}
                                     {userInfo && userInfo.isAdmin && isAdminView && order.paymentMethod === 'COD' && !order.isPaid && (
-                                <ListGroup.Item className="d-grid"> {/* d-grid for full width button */}
+                                <ListGroup.Item className="d-grid"> 
                                     <Button
                                         type='button'
                                         className='btn btn-block btn-success'
@@ -418,11 +423,7 @@ function OrderPage() {
                                     </Button>
                                 </ListGroup.Item>
                             )}
-                            {/* --- END ADMIN SECTIONS --- */}
-
-
-                            {/* --- USER CANCEL ORDER SECTION --- */}
-                            {/* Existing cancellation button */}
+                            
                             {order.status === 'Processing' && !isAdminView && (
                                 <ListGroup.Item className="d-grid">
                                     <Button type='button' variant='danger' onClick={cancelOrderHandler} disabled={loading}>
@@ -431,24 +432,18 @@ function OrderPage() {
                                 </ListGroup.Item>
                             )}
                             
-                            {/* --- **NAYA: USER RETURN ORDER SECTION** --- */}
-                            {/* 'Request Return' button tab dikhega jab:
-                                1. Order 'Delivered' ho.
-                                2. Admin view na ho.
-                                3. Order ke liye abhi tak koi return request initiate na hua ho.
-                                4. Return deadline abhi cross na hui ho.
-                            */}
+                        
                             {order.status === 'Delivered' && !isAdminView && !order.returnInitiated && (
                                 <ListGroup.Item className="d-grid">
                                     <Button
                                         type='button'
                                         variant='primary'
                                         onClick={() => setShowReturnForm(true)}
-                                        // Button disabled hoga agar loading ho ya return window band ho gayi ho
+                                        
                                         disabled={loading || (order.returnDeadline && new Date() > new Date(order.returnDeadline))}
                                     >
                                         Request Return
-                                        {/* Return deadline dikhayein agar available ho */}
+                                        
                                         {order.returnDeadline && ` (within ${new Date(order.returnDeadline).toLocaleDateString()})`}
                                     </Button>
                                     {/* Agar return window band ho gayi hai toh message dikhayein */}
@@ -458,8 +453,7 @@ function OrderPage() {
                                 </ListGroup.Item>
                             )}
 
-                            {/* **NAYA: Return Request Form (Modal ya inline)** */}
-                            {/* Ye form tab dikhega jab user ne "Request Return" button click kiya ho, aur admin view na ho */}
+                            
                             {showReturnForm && !isAdminView && (
                                 <ListGroup.Item>
                                     <h3>Request Return</h3>
@@ -493,7 +487,7 @@ function OrderPage() {
                                                 value={returnMethod}
                                                 onChange={(e) => {
                                                     setReturnMethod(e.target.value);
-                                                    // Agar method change ho to bank details reset kar do
+                                                    
                                                     if (e.target.value !== 'Bank Transfer') {
                                                         setBankDetails({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '' });
                                                     }
@@ -507,7 +501,7 @@ function OrderPage() {
                                             </Form.Control>
                                         </Form.Group>
 
-                                        {/* Bank Details fields tabhi dikhenge jab 'Bank Transfer' select kiya ho */}
+                                        
                                         {returnMethod === 'Bank Transfer' && (
                                             <>
                                                 <hr className="my-3"/>
@@ -568,22 +562,18 @@ function OrderPage() {
                                 </ListGroup.Item>
                             )}
 
-                            {/* NAYA: Agar return already requested ya processed hai toh uska status dikhayein */}
+                            
                             {order.returnInitiated && (order.status === 'Return Requested' || order.status === 'Return Approved' || order.status === 'Return Rejected' || order.status === 'Refund Processed') && (
                                 <ListGroup.Item>
                                     <Alert variant={order.status === 'Return Rejected' ? 'danger' : order.status === 'Refund Processed' ? 'success' : 'info'}>
                                         Return Status: <strong>{order.status}</strong>
                                         {order.returnRequestDate && ` (Requested on ${new Date(order.returnRequestDate).toLocaleDateString()})`}
                                         {order.returnId && ` | Return ID: ${order.returnId}`}
-                                        {/* Yahan aap adminNotes dikha sakte hain agar aap order schema mein adminNotes populte karte hain
-                                            ya return details ko alag se fetch karte hain. Abhi ke liye yeh conceptual hai. */}
-                                        {/* {order.status === 'Return Rejected' && order.returnDetails && order.returnDetails.adminNotes && (
-                                            <p className="mt-2">Admin Note: {order.returnDetails.adminNotes}</p>
-                                        )} */}
+                                        
                                     </Alert>
                                 </ListGroup.Item>
                             )}
-                            {/* --- END USER RETURN ORDER SECTION --- */}
+                            
 
                         </ListGroup>
                     </Card>
