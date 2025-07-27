@@ -31,7 +31,7 @@ import SellerApplicationListPage from './components/SellerApplicationListPage';
 import SellerProductListPage from './components/SellerProductListPage';
 import SellerProductForm from './components/SellerProductForm';
 import SellerDashboardPage from './components/SellerDashboardPage';
-
+import CouponListScreen from './components/CouponListScreen'; 
 
 
 function App() {
@@ -56,7 +56,7 @@ function App() {
             <Route path="/edit/:id" element={<EditCycle />} /> 
             <Route path="/admin/returns" element={<ReturnListScreen />} />
             <Route path="/admin/seller-applications" element={<SellerApplicationListPage />} />
-
+            <Route path="/admin/coupons" element={<CouponListScreen />} />
             {/* User/Auth Routes */}
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/address" element={<AddressPage />} />

@@ -14,6 +14,7 @@ import returnRoutes from './routes/returnRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import sellerProductRoutes from './routes/sellerProductRoutes.js';
 import deliveryRoutes from './routes/deliveryRoutes.js';
+import couponRoutes from './routes/couponRoutes.js';
 const app = express();
 
 const port = process.env.PORT || 5000;
@@ -50,6 +51,7 @@ app.use('/api/returns', returnRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/seller/products', sellerProductRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/coupons', couponRoutes);
 app.listen(port, () => {
   console.log(`Server successfully started on port ${port}`);
 });
