@@ -1,13 +1,18 @@
-import React, { useContext } from 'react'; // useEffect aur useState hata diya
+import React, { useContext, useState, useEffect } from 'react'; 
 import { Link, useNavigate } from 'react-router-dom';
-import { Row, Col, ListGroup, Image, Button, Card, Alert } from 'react-bootstrap';
-import { CartContext } from '../context/CartContext'; // CartContext import kiya
+import { Row, Col, ListGroup, Image, Button, Card, Alert, Form } from 'react-bootstrap';
+import { CartContext } from '../context/CartContext'; 
 
 
 function CartPage() {
     // Ab hum state seedhe context se lenge
     const { cartItems, removeFromCart, updateCartItemQuantity } = useContext(CartContext);
-     console.log('Cart items received in CartPage:', cartItems); // YEH NAYI LINE HAI
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [discount, setDiscount] = useState(0);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+     console.log('Cart items received in CartPage:', cartItems); 
     const calculateSubtotal = () => {
         if (!cartItems) return 0;
         return cartItems.reduce((acc, item) => {
@@ -34,6 +39,62 @@ function CartPage() {
     const checkoutHandler = () => {
         navigate('/shipping');
     };
+    const applyCouponHandler = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            // Token ko localStorage se lena zaroori hai
+            const userInfo = localStorage.getItem('userInfo') 
+                ? JSON.parse(localStorage.getItem('userInfo')) 
+                : null;
+
+            if (!userInfo) {
+                throw new Error('You must be logged in to apply a coupon.');
+            }
+
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/coupons/apply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+                body: JSON.stringify({ couponCode }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Failed to apply coupon');
+            }
+            
+            setAppliedCoupon(data);
+            alert('Coupon applied successfully!');
+            
+        } catch (err) {
+            setError(err.message);
+            setAppliedCoupon(null); // Galti hone par purana coupon hata do
+        } finally {
+            setLoading(false);
+        }
+    };
+    const subtotal = Number(calculateSubtotal());
+
+    useEffect(() => {
+        if (appliedCoupon) {
+            let calculatedDiscount = 0;
+            if (appliedCoupon.discountType === 'percentage') {
+                calculatedDiscount = (subtotal * appliedCoupon.discountValue) / 100;
+            } else { // fixed
+                calculatedDiscount = appliedCoupon.discountValue;
+            }
+            // Yeh check karega ki discount subtotal se zyada na ho
+            setDiscount(Math.min(calculatedDiscount, subtotal));
+        } else {
+            setDiscount(0);
+        }
+    }, [appliedCoupon, subtotal]);
+
+    const grandTotal = (subtotal - discount).toFixed(2);
+    // 👆️ YEH CALCULATION WALA CODE ADD KAR 👆️
     return (
     <>
         <h1>Shopping Cart</h1>
@@ -113,20 +174,70 @@ function CartPage() {
                 <Card>
                     <ListGroup variant="flush">
                         <ListGroup.Item>
-                            <h2>
-                                Subtotal ({cartItems.reduce((acc, item) => acc + item.quantity, 0)}) items
-                            </h2>
-                            ₹{calculateSubtotal()}
+                            <h2>Order Summary</h2>
                         </ListGroup.Item>
+
+                        <ListGroup.Item>
+                            <Row>
+                                <Col>Subtotal</Col>
+                                <Col className="text-end">₹{subtotal.toFixed(2)}</Col>
+                            </Row>
+                        </ListGroup.Item>
+                        
+                        {/* Coupon Code Section */}
+                        <ListGroup.Item>
+                            <Form>
+                                <Form.Group controlId='coupon'>
+                                    <Form.Label>Have a Coupon?</Form.Label>
+                                    <div className="d-flex">
+                                        <Form.Control
+                                            type='text'
+                                            placeholder='Enter code'
+                                            value={couponCode}
+                                            onChange={(e) => setCouponCode(e.target.value)}
+                                        />
+                                        <Button 
+                                            type='button' 
+                                            onClick={applyCouponHandler} 
+                                            disabled={loading || !couponCode}
+                                            className="ms-2"
+                                        >
+                                            {loading ? '...' : 'Apply'}
+                                        </Button>
+                                    </div>
+                                </Form.Group>
+                                {error && <Alert variant='danger' className='mt-2 small p-2'>{error}</Alert>}
+                            </Form>
+                        </ListGroup.Item>
+
+                        {/* Discount and Grand Total Section */}
+                        {appliedCoupon && (
+                             <ListGroup.Item>
+                                <Row>
+                                    <Col>Discount ({appliedCoupon.code})</Col>
+                                    <Col className="text-end" style={{color: 'green'}}>
+                                        - ₹{discount.toFixed(2)}
+                                    </Col>
+                                </Row>
+                            </ListGroup.Item>
+                        )}
+
+                        <ListGroup.Item>
+                            <Row>
+                                <Col><strong>Grand Total</strong></Col>
+                                <Col className="text-end"><strong>₹{grandTotal}</strong></Col>
+                            </Row>
+                        </ListGroup.Item>
+
                         <ListGroup.Item className="d-grid">
-                                <Button
-    type="button"
-    className="btn-block"
-    disabled={cartItems.length === 0}
-    onClick={checkoutHandler}  // <-- Yeh add karein
->
-    Proceed To Checkout
-</Button>
+                            <Button
+                                type="button"
+                                className="btn-block"
+                                disabled={cartItems.length === 0}
+                                onClick={checkoutHandler}
+                            >
+                                Proceed To Checkout
+                            </Button>
                         </ListGroup.Item>
                     </ListGroup>
                 </Card>

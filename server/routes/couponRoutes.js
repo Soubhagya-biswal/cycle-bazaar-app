@@ -5,6 +5,7 @@ import {
   getAllCoupons,
   updateCoupon,
   deleteCoupon,
+  applyCoupon, 
 } from '../controllers/couponController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -14,5 +15,7 @@ router
   .route('/:id')
   .put(protect, admin, updateCoupon)
   .delete(protect, admin, deleteCoupon);
+// User route
+router.route('/apply').post(protect, applyCoupon);
 
 export default router;
