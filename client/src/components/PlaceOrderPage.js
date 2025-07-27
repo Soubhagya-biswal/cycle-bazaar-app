@@ -12,7 +12,7 @@ function PlaceOrderPage() {
     // Calculate prices
     const itemsPrice = cartItems.reduce((acc, item) => acc + item.cycleId.price * item.quantity, 0);
     const shippingPrice = itemsPrice > 10000 ? 0 : 500;
-    const taxPrice = Number((0.18 * itemsPrice).toFixed(2));
+    const taxPrice = 0;
     const totalPrice = (itemsPrice + shippingPrice + taxPrice).toFixed(2);
 
     const placeOrderHandler = async () => {
@@ -49,7 +49,7 @@ function PlaceOrderPage() {
         const createdOrder = await res.json();
         clearCart();
         
-        // This line is changed to redirect to the new order page
+       
         navigate(`/order/${createdOrder._id}`); 
 
     } catch (error) {
@@ -121,7 +121,7 @@ function PlaceOrderPage() {
                             </ListGroup.Item>
                             <ListGroup.Item>
                                 <Row>
-                                    <Col>Tax (18%)</Col>
+                                    <Col>Tax ()</Col>
                                     <Col>₹{taxPrice}</Col>
                                 </Row>
                             </ListGroup.Item>
