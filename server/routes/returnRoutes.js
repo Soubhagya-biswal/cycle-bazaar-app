@@ -9,7 +9,7 @@ import Stripe from 'stripe';
 import User from '../models/user.model.js'; // User model import kiya for email
 import sendEmail from '../utils/sendEmail.js'; // sendEmail utility import kiya
 
-const stripe = new Stripe('sk_test_51QCAw7LLSgFDTQWj0k89K2TCpDmFss4dKJFug3Z84cThg9TUp2mWzjGPb34O14gyNWfZrp0xFyfMHg95mWPVn2r80066Tm0HsH'); // Stripe ko initialize kiya
+const stripe = new Stripe('sk_test_51QCAw7LLSgFDTQWj0k89K2TCpDmFss4dKJFug3Z84cThg9TUp2mWzjGPb34O14gyNWfZrp0xFyfMHg95mWPVn2r80066Tm0HsH');
 // --- NAYE IMPORTS END ---
 
 const router = express.Router();
@@ -287,6 +287,32 @@ router.put(
     });
   })
 );
+router.delete(
+  '/:id',
+  protect,
+  admin,
+  asyncHandler(async (req, res) => {
+    const returnRequest = await Return.findById(req.params.id);
 
+    if (returnRequest) {
+      
+      const order = await Order.findById(returnRequest.orderId);
+      if (order) {
+        order.returnInitiated = false;
+        order.returnRequestDate = undefined;
+        order.returnId = undefined;
+        
+        order.status = 'Delivered';
+        await order.save();
+      }
+
+      await returnRequest.deleteOne();
+      res.json({ message: 'Return request deleted successfully.' });
+    } else {
+      res.status(404);
+      throw new Error('Return request not found.');
+    }
+  })
+);
 
 export default router;
