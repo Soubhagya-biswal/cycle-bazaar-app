@@ -233,6 +233,7 @@ const unsubscribeFromPriceDrop = asyncHandler(async (req, res) => {
     }
 });
 const createCycleReview = asyncHandler(async (req, res) => {
+    console.log('--- createCycleReview FUNCTION CALLED ---');
     const { rating, comment } = req.body;
     const cycle = await Cycle.findById(req.params.id);
 
