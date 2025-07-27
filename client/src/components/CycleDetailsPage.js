@@ -25,7 +25,8 @@ function CycleDetailsPage() {
     const [pincode, setPincode] = useState('');
     const [deliveryLoading, setDeliveryLoading] = useState(false);
     const [deliveryError, setDeliveryError] = useState('');
-    const [estimatedDate, setEstimatedDate] = useState('');
+    const [estimatedDate, setEstimatedDate] = useState('');
+    const [hasReviewed, setHasReviewed] = useState(false);
     const fetchCycle = useCallback(async () => {
         try {
             setLoading(true);
@@ -77,6 +78,21 @@ function CycleDetailsPage() {
             } else {
                 setIsPriceSubscribed(false);
             }
+            if (userInfo && data.reviews) {
+            const userReview = data.reviews.find(
+                (review) => review.user === userInfo._id
+            );
+            if (userReview) {
+                setRating(userReview.rating);
+                setComment(userReview.comment);
+                setHasReviewed(true);
+            } else {
+                // Agar user badalta hai to form reset ho jaye
+                setRating(0);
+                setComment('');
+                setHasReviewed(false);
+            }
+        }
             setLoading(false);
         } catch (err) {
             setError(err.message || 'Error loading cycle details.');
@@ -251,9 +267,8 @@ function CycleDetailsPage() {
             if (!res.ok) {
                 throw new Error(data.message || 'Failed to submit review');
             }
-            alert('Review submitted successfully!');
-            setRating(0);
-            setComment('');
+            alert(data.message); // Server se aaya hua message dikhayein
+            setHasReviewed(true); // Review submit/update hone ke baad status set karein
             fetchCycle(); // This reloads the cycle to show the new review
         } catch (err) {
             setReviewError(err.message);
@@ -437,7 +452,7 @@ function CycleDetailsPage() {
                 </Col>
 
                 <Col md={6}>
-                    <h2>Write a Customer Review</h2>
+                    <h2>{hasReviewed ? 'Your Review' : 'Write a Customer Review'}</h2>
                     {reviewError && <Alert variant="danger">{reviewError}</Alert>}
                     {userInfo ? (
                         <Form onSubmit={submitReviewHandler}>
