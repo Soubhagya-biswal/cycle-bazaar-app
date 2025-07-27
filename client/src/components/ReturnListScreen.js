@@ -135,13 +135,16 @@ function ReturnListScreen() {
                   <td>
   {/* NAYA CODE: 'to' prop ko ek object ke roop mein diya hai */}
   <LinkContainer to={{
-    pathname: `/order/${returnReq.orderId._id}`, // Pathname mein sirf path hai
-    search: '?adminView=true' // Query parameters 'search' field mein hain
-  }}>
+    pathname: `/order/${returnReq.orderId?._id}`,
+    search: '?adminView=true'
+}}
+// LinkContainer ko disable karein agar orderId nahi hai
+disabled={!returnReq.orderId}
+>
     <Button variant='link' className='btn-sm'>
-      {returnReq.orderId._id}
+        {returnReq.orderId?._id || 'Order Deleted'}
     </Button>
-  </LinkContainer>
+</LinkContainer>
 </td>
                   <td>{returnReq.userId ? `${returnReq.userId.name} (${returnReq.userId.email})` : 'N/A'}</td>
                   <td>{returnReq.reason}</td>
