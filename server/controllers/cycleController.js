@@ -268,7 +268,8 @@ const createCycleReview = asyncHandler(async (req, res) => {
         cycle.rating =
             cycle.reviews.reduce((acc, item) => item.rating + acc, 0) /
             cycle.reviews.length;
-
+            console.log('--- About to save cycle. Checking seller field: ---');
+        console.log(JSON.stringify(cycle, null, 2));
         await cycle.save();
         res.status(201).json({ message: 'Review submitted successfully' });
 
