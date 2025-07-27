@@ -33,25 +33,24 @@ const getAllCycles = asyncHandler(async (req, res) => {
 // @route   POST /cycles/add
 // @access  Private/Admin
 const addCycle = asyncHandler(async (req, res) => {
-  const { brand, model, price, imageUrl, description, stock } = req.body; // Include new fields
+    const { brand, model, price, imageUrl, description, stock } = req.body;
 
-  const newCycle = new Cycle({
-    brand,
-    model,
-    price: Number(price),
-    imageUrl,
-    description, // Add description
-    stock: Number(stock), // Add stock and ensure it's a Number
-  });
+    const newCycle = new Cycle({
+        brand,
+        model,
+        price: Number(price),
+        imageUrl,
+        description,
+        stock: Number(stock),
+        seller: req.user._id, // YEH LINE ADD KI GAYI HAI
+        rating: 0, 
+        numReviews: 0, // Naye cycle ke liye default values
+    });
 
-  const createdCycle = await newCycle.save();
-  res.status(201).json({ message: 'New Cycle added successfully!', cycle: createdCycle });
+    const createdCycle = await newCycle.save();
+    res.status(201).json({ message: 'New Cycle added successfully!', cycle: createdCycle });
 });
 
-
-// @desc    Get a single cycle by ID
-// @route   GET /cycles/:id
-// @access  Public
 const getCycleById = asyncHandler(async (req, res) => {
   const cycle = await Cycle.findById(req.params.id);
 
@@ -64,9 +63,7 @@ const getCycleById = asyncHandler(async (req, res) => {
 });
 
 
-// @desc    Update a cycle
-// @route   PUT /cycles/update/:id (or PATCH)
-// @access  Private/Admin
+
 const updateCycle = asyncHandler(async (req, res) => {
     const { brand, model, price, imageUrl, description, stock } = req.body;
 
