@@ -117,7 +117,7 @@ function CouponListScreen() {
                         <Form.Control
                             type='date'
                             value={expiryDate}
-                            onChange={(e) => setExpiryDate(e.targe.value)}
+                            onChange={(e) => setExpiryDate(e.target.value)}
                         />
                     </Form.Group>
 
