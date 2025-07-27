@@ -101,7 +101,33 @@ function ReturnListScreen() {
       setLoading(false);
     }
   };
+  const deleteReturnHandler = async (returnId) => {
+    // Delete karne se pehle user se confirm karein
+    if (window.confirm('Are you sure you want to permanently delete this return request?')) {
+        try {
+            setLoading(true);
+            setError(null);
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/returns/${returnId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+            });
 
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Failed to delete return request.');
+            }
+            alert('Return request deleted successfully!');
+            fetchReturns(); // Delete hone ke baad list ko refresh karein
+        } catch (err) {
+            setError(err.message);
+            console.error('Error deleting return request:', err);
+        } finally {
+            setLoading(false);
+        }
+    }
+  };
   return (
     <Row>
       <Col>
@@ -193,6 +219,14 @@ disabled={!returnReq.orderId}
                     >
                       Update
                     </Button>
+                    <Button
+                      variant='danger'
+                      className='btn-sm ms-2' 
+                      onClick={() => deleteReturnHandler(returnReq._id)}
+                      disabled={loading}
+                  >
+                      <i className="fas fa-trash"></i> 
+                  </Button>
                   </td>
                 </tr>
               ))}
