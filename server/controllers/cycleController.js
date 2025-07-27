@@ -11,7 +11,7 @@ const getAllCycles = asyncHandler(async (req, res) => {
     const pageSize = 8;
     const page = Number(req.query.pageNumber) || 1;
 
-    // NAYA CODE: Search keyword ke liye logic
+    
     const keyword = req.query.keyword ? {
         $or: [
             { brand: { $regex: req.query.keyword, $options: 'i' } },
@@ -19,7 +19,7 @@ const getAllCycles = asyncHandler(async (req, res) => {
         ]
     } : {};
 
-    // Count aur find mein naya filter (`...keyword`) use kiya gaya hai
+    
     const count = await Cycle.countDocuments({ ...keyword });
     const cycles = await Cycle.find({ ...keyword })
         .limit(pageSize)
@@ -27,11 +27,10 @@ const getAllCycles = asyncHandler(async (req, res) => {
 
     res.json({ cycles, page, pages: Math.ceil(count / pageSize) });
 });
-
-
-// @desc    Add a new cycle
-// @route   POST /cycles/add
-// @access  Private/Admin
+const getAdminCycles = asyncHandler(async (req, res) => {
+    const cycles = await Cycle.find({}); 
+    res.json(cycles);
+});
 const addCycle = asyncHandler(async (req, res) => {
     const { brand, model, price, imageUrl, description, stock } = req.body;
 
@@ -312,7 +311,8 @@ const deleteReview = asyncHandler(async (req, res) => {
     }
 });
 export {
-  getAllCycles,
+    getAllCycles,
+    getAdminCycles,
   addCycle,
   getCycleById,
   updateCycle,

@@ -3,10 +3,10 @@ const router = express.Router();
 import asyncHandler from 'express-async-handler'; 
 import Cycle from '../models/cycle.model.js'; 
 import { protect, admin } from '../middleware/authMiddleware.js'; 
-import { getAllCycles, addCycle, getCycleById, updateCycle, deleteCycle, subscribeToStockNotification, unsubscribeFromStockNotification, subscribeToPriceDrop, unsubscribeFromPriceDrop, createCycleReview, deleteReview } from '../controllers/cycleController.js';
+import { getAllCycles, getAdminCycles, addCycle, getCycleById, updateCycle, deleteCycle, subscribeToStockNotification, unsubscribeFromStockNotification, subscribeToPriceDrop, unsubscribeFromPriceDrop, createCycleReview, deleteReview } from '../controllers/cycleController.js';
 
 router.route('/').get(getAllCycles);
-
+router.route('/admin/all').get(protect, admin, getAdminCycles);
 
 router.route('/add').post(protect, admin, addCycle); 
 

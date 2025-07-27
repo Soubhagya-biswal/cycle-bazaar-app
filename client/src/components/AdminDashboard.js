@@ -39,9 +39,14 @@ function AdminDashboard() {
         setReviews(allReviews);
     }, [cycles]);
   const fetchCycles = () => {
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/`)
+    // Naya API endpoint call kiya aur headers add kiye
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/admin/all`, {
+        headers: {
+            'Authorization': `Bearer ${userInfo.token}`,
+        }
+    })
       .then(res => res.json())
-      .then(data => setCycles(data.cycles))
+      .then(data => setCycles(data)) // Yahan data.cycles se data kar diya
       .catch(err => console.error('Error fetching cycles:', err));
   };
   const fetchOrders = () => {
