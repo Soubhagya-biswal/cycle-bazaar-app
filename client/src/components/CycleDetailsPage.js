@@ -22,7 +22,10 @@ function CycleDetailsPage() {
     const [currentDisplayedPrice, setCurrentDisplayedPrice] = useState(0);
     const [currentDisplayedStock, setCurrentDisplayedStock] = useState(0);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
-
+    const [pincode, setPincode] = useState('');
+    const [deliveryLoading, setDeliveryLoading] = useState(false);
+    const [deliveryError, setDeliveryError] = useState('');
+    const [estimatedDate, setEstimatedDate] = useState('');
     const fetchCycle = useCallback(async () => {
         try {
             setLoading(true);
@@ -116,6 +119,44 @@ function CycleDetailsPage() {
             addToCart(cycle._id, 1, selectedVariantId);
         } else {
             alert('This cycle is currently out of stock!');
+        }
+    };
+
+    const checkDeliveryDateHandler = async () => {
+        // Pincode validation
+        if (!/^\d{6}$/.test(pincode)) {
+            setDeliveryError('Please enter a valid 6-digit pincode.');
+            setEstimatedDate('');
+            return;
+        }
+
+        setDeliveryLoading(true);
+        setDeliveryError('');
+        setEstimatedDate('');
+
+        try {
+            // Backend API ko call karenge (yeh hum agle step mein banayenge)
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/delivery/estimate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ pincode: pincode })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                // Agar server se error aaye to use dikhayein
+                throw new Error(data.message || 'Could not fetch delivery date.');
+            }
+            
+            // Success hone par date set karein
+            setEstimatedDate(data.estimatedDate);
+
+        } catch (err) {
+            setDeliveryError(err.message);
+        } finally {
+            setDeliveryLoading(false);
         }
     };
     const wishlistHandler = async () => {
@@ -289,7 +330,7 @@ function CycleDetailsPage() {
                                                 value={selectedSize}
                                                 onChange={(e) => setSelectedSize(e.target.value)}
                                             >
-                                                {/* Filter sizes by selected color */}
+                                                
                                                 {cycle.variants
                                                     .filter(v => v.color === selectedColor)
                                                     .map((sizeOption) => (
@@ -303,30 +344,46 @@ function CycleDetailsPage() {
                                 </ListGroup.Item>
                             </>
                         )}
-                        {/* 👆️ END: VARIANT SELECTION UI (already correct) 👆️ */}
+                        
                     </ListGroup>
                 </Col>
-                <Col md={3}> {/* This is the column for the Card (Price, Status, Buttons) */}
+                <Col md={3}> 
                     <Card>
                         <ListGroup variant='flush'>
-                            {/* 👇️ START: NAYA REVISED PRICE & STATUS DISPLAY FOR ALIGNMENT 👇️ */}
+                            
                             <ListGroup.Item>
                                 <Row className="align-items-center mb-2">
-                                    <Col xs={5}>Price:</Col> {/* Label is not bold, value is */}
-                                    <Col xs={7} className="text-end text-nowrap"> {/* text-nowrap to prevent line breaks */}
+                                    <Col xs={5}>Price:</Col> 
+                                    <Col xs={7} className="text-end text-nowrap"> 
                                         <strong>₹{currentDisplayedPrice.toFixed(2)}</strong>
                                     </Col>
                                 </Row>
                                 <Row className="align-items-center">
-                                    <Col xs={5}>Status:</Col> {/* Label is not bold, value is */}
-                                    <Col xs={7} className="text-end text-nowrap"> {/* text-nowrap to prevent line breaks */}
+                                    <Col xs={5}>Status:</Col> 
+                                    <Col xs={7} className="text-end text-nowrap"> 
                                         {currentDisplayedStock > 0 ? 'In Stock' : 'Out Of Stock'}
                                     </Col>
                                 </Row>
                             </ListGroup.Item>
-                            {/* 👆️ END: NAYA REVISED PRICE & STATUS DISPLAY 👆️ */}
+                            <ListGroup.Item>
+                                <div className="d-flex">
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Enter Pincode"
+                                        value={pincode}
+                                        onChange={(e) => setPincode(e.target.value)}
+                                        maxLength="6"
+                                        className="me-2"
+                                    />
+                                    <Button onClick={checkDeliveryDateHandler} disabled={deliveryLoading}>
+                                        {deliveryLoading ? '...' : 'Check'}
+                                    </Button>
+                                </div>
+                                {deliveryError && <small className="text-danger d-block mt-1">{deliveryError}</small>}
+                                {estimatedDate && <small className="text-success d-block mt-1">Estimated delivery: <b>{estimatedDate}</b></small>}
+                            </ListGroup.Item>
 
-                            <ListGroup.Item className="d-grid gap-2"> {/* d-grid gap-2 for full-width buttons */}
+                            <ListGroup.Item className="d-grid gap-2"> 
                                 {currentDisplayedStock > 0 ? (
                                     <Button onClick={addToCartHandler} variant="primary" type='button'>
                                         Add To Cart
