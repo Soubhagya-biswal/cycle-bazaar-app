@@ -1,53 +1,46 @@
-import React, { useContext, useState, useEffect } from 'react'; 
+import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Row, Col, ListGroup, Image, Button, Card, Alert, Form } from 'react-bootstrap';
-import { CartContext } from '../context/CartContext'; 
-
+import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext'; // AuthContext ko import kiya
 
 function CartPage() {
-    // Ab hum state seedhe context se lenge
-    const { cartItems, removeFromCart, updateCartItemQuantity } = useContext(CartContext);
+    // Step 1: Sab kuch seedhe context se le rahe hain
+    const { 
+        cartItems, 
+        removeFromCart, 
+        updateCartItemQuantity, 
+        subtotal, 
+        discount, 
+        grandTotal, 
+        appliedCoupon, 
+        applyCoupon,
+        clearCoupon
+    } = useContext(CartContext);
+
+    const { userInfo } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    // Sirf is page ke input ke liye local state
     const [couponCode, setCouponCode] = useState('');
-    const [appliedCoupon, setAppliedCoupon] = useState(null);
-    const [discount, setDiscount] = useState(0);
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-     console.log('Cart items received in CartPage:', cartItems); 
-    const calculateSubtotal = () => {
-        if (!cartItems) return 0;
-        return cartItems.reduce((acc, item) => {
-            // 👇️ NAYA: Variant ki price calculate karein
-            const basePrice = item.cycleId.price;
-            const chosenVariant = item.variantId // Agar item mein variantId hai
-                ? item.cycleId.variants.find(v => v._id === item.variantId) // to us variant ko dhoondo
-                : null; // warna null
+    const [error, setError] = useState('');
 
-            const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
-            // 👆️ NAYA: Variant ki price calculate karein
-            return acc + item.quantity * effectivePrice;
-        }, 0).toFixed(2);
-    };
-
-    const removeFromCartHandler = (cycleId, variantId = null) => { // 👇️ NAYA: 'variantId' parameter add kiya
+    const removeFromCartHandler = (cycleId, variantId = null) => {
         if (window.confirm('Are you sure you want to remove this item?')) {
-            // 👇️ NAYA: 'variantId' bhi pass karein
             removeFromCart(cycleId, variantId);
         }
     };
-       const navigate = useNavigate();
 
     const checkoutHandler = () => {
         navigate('/shipping');
     };
+
+    // Step 2: applyCouponHandler ab context ka istemal karega
     const applyCouponHandler = async () => {
         setLoading(true);
         setError('');
         try {
-            // Token ko localStorage se lena zaroori hai
-            const userInfo = localStorage.getItem('userInfo') 
-                ? JSON.parse(localStorage.getItem('userInfo')) 
-                : null;
-
             if (!userInfo) {
                 throw new Error('You must be logged in to apply a coupon.');
             }
@@ -66,185 +59,161 @@ function CartPage() {
                 throw new Error(data.message || 'Failed to apply coupon');
             }
             
-            setAppliedCoupon(data);
+            applyCoupon(data); // Context function call kiya
             alert('Coupon applied successfully!');
             
         } catch (err) {
             setError(err.message);
-            setAppliedCoupon(null); // Galti hone par purana coupon hata do
+            clearCoupon(); // Galti hone par context se coupon hata do
         } finally {
             setLoading(false);
         }
     };
-    const subtotal = Number(calculateSubtotal());
 
-    useEffect(() => {
-        if (appliedCoupon) {
-            let calculatedDiscount = 0;
-            if (appliedCoupon.discountType === 'percentage') {
-                calculatedDiscount = (subtotal * appliedCoupon.discountValue) / 100;
-            } else { // fixed
-                calculatedDiscount = appliedCoupon.discountValue;
-            }
-            // Yeh check karega ki discount subtotal se zyada na ho
-            setDiscount(Math.min(calculatedDiscount, subtotal));
-        } else {
-            setDiscount(0);
-        }
-    }, [appliedCoupon, subtotal]);
-
-    const grandTotal = (subtotal - discount).toFixed(2);
-    // 👆️ YEH CALCULATION WALA CODE ADD KAR 👆️
     return (
-    <>
-        <h1>Shopping Cart</h1>
-        <Row>
-            <Col md={8}>
-                {cartItems.length === 0 ? (
-                    <Alert variant="info">
-                        Your cart is empty. <Link to="/">Go Back</Link>
-                    </Alert>
-                ) : (
-                    <ListGroup variant="flush">
-                        {cartItems.map(item => (
-                            <ListGroup.Item key={item.cycleId._id}>
-                                <Row className="align-items-center">
-                                    <Col md={2}>
-                                        <Image src={item.cycleId.imageUrl} alt={item.cycleId.model} fluid rounded />
-                                    </Col>
-                                    <Col md={3}>
-                                        <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
-                                        {/* 👇️ START: NAYA VARIANT DETAILS DISPLAY YAHAN 👇️ */}
-                                        {item.variantId && item.cycleId.variants && item.cycleId.variants.length > 0 && (
-                                            (() => { // IIFE to find the variant details
-                                                const chosenVariant = item.cycleId.variants.find(
-                                                    v => v._id === item.variantId
-                                                );
-                                                return chosenVariant ? (
-                                                    <div style={{ fontSize: '0.8em', color: '#6c757d' }}>
+        <>
+            <h1>Shopping Cart</h1>
+            <Row>
+                <Col md={8}>
+                    {cartItems.length === 0 ? (
+                        <Alert variant="info">
+                            Your cart is empty. <Link to="/">Go Back</Link>
+                        </Alert>
+                    ) : (
+                        <ListGroup variant="flush">
+                            {cartItems.map(item => {
+                                // Price calculation for each item
+                                const basePrice = item.cycleId.price;
+                                const chosenVariant = item.variantId && item.cycleId.variants 
+                                    ? item.cycleId.variants.find(v => v._id === item.variantId) 
+                                    : null;
+                                const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
+                                
+                                return (
+                                    <ListGroup.Item key={item.variantId ? `${item.cycleId._id}-${item.variantId}`: item.cycleId._id}>
+                                        <Row className="align-items-center">
+                                            <Col md={2}>
+                                                <Image src={item.cycleId.imageUrl} alt={item.cycleId.model} fluid rounded />
+                                            </Col>
+                                            <Col md={3}>
+                                                <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
+                                                {chosenVariant && (
+                                                    <div style={{ fontSize: '0.8em', color: 'grey' }}>
                                                         ({chosenVariant.color} - {chosenVariant.size})
                                                     </div>
-                                                ) : null;
-                                            })()
-                                        )}
-                                    </Col>
-                                    <Col md={2}>₹{item.cycleId.price}
-                                        {/* 👇️ NAYA: Price display adjusted for variant additionalPrice 👇️ */}
-                                        {(() => { // IIFE to calculate price
-                                            const basePrice = item.cycleId.price;
-                                            const chosenVariant = item.variantId
-                                                ? item.cycleId.variants.find(v => v._id === item.variantId)
-                                                : null;
-                                            const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
-                                            return `₹${effectivePrice.toFixed(2)}`;
-                                        })()}
-                                    </Col>
-                                    <Col md={2} className="d-flex align-items-center"> {/* flexbox ताकि बटन और टेक्स्ट एक लाइन में हों */}
-    <Button
-        variant="outline-secondary"
-        size="sm" 
-        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity - 1, item.variantId)} // 👇️ NAYA: item.variantId add kiya
-        disabled={item.quantity === 1} 
-        className="me-2" 
-    >
-        <i className="fa-solid fa-minus"></i>
-    </Button>
-    {item.quantity}
-    <Button
-        variant="outline-secondary"
-        size="sm" 
-        onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity + 1, item.variantId)} // 👇️ NAYA: item.variantId add kiya
-        className="ms-2" 
-    >
-        <i className="fa-solid fa-plus"></i>
-    </Button>
-</Col>
-                                    <Col md={2}>
-                                        <Button type="button" variant="light" onClick={() => removeFromCartHandler(item.cycleId._id)}>
-                                            <i className="fas fa-trash"></i>
-                                        </Button>
-                                    </Col>
-                                </Row>
+                                                )}
+                                            </Col>
+                                            <Col md={2}>
+                                                ₹{effectivePrice.toFixed(2)}
+                                            </Col>
+                                            <Col md={3} className="d-flex align-items-center justify-content-center">
+                                                <Button
+                                                    variant="light"
+                                                    size="sm" 
+                                                    onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity - 1, item.variantId)}
+                                                    disabled={item.quantity === 1} 
+                                                    className="me-2" 
+                                                >
+                                                    <i className="fas fa-minus"></i>
+                                                </Button>
+                                                <span style={{ minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
+                                                <Button
+                                                    variant="light"
+                                                    size="sm" 
+                                                    onClick={() => updateCartItemQuantity(item.cycleId._id, item.quantity + 1, item.variantId)}
+                                                    className="ms-2" 
+                                                >
+                                                    <i className="fas fa-plus"></i>
+                                                </Button>
+                                            </Col>
+                                            <Col md={2}>
+                                                <Button type="button" variant="light" onClick={() => removeFromCartHandler(item.cycleId._id, item.variantId)}>
+                                                    <i className="fas fa-trash"></i>
+                                                </Button>
+                                            </Col>
+                                        </Row>
+                                    </ListGroup.Item>
+                                );
+                            })}
+                        </ListGroup>
+                    )}
+                </Col>
+                {/* Step 3: Naya Summary Card jo context se values le raha hai */}
+                <Col md={4}>
+                    <Card>
+                        <ListGroup variant="flush">
+                            <ListGroup.Item>
+                                <h2>Order Summary</h2>
                             </ListGroup.Item>
-                        ))}
-                    </ListGroup>
-                )}
-            </Col>
-            <Col md={4}>
-                <Card>
-                    <ListGroup variant="flush">
-                        <ListGroup.Item>
-                            <h2>Order Summary</h2>
-                        </ListGroup.Item>
 
-                        <ListGroup.Item>
-                            <Row>
-                                <Col>Subtotal</Col>
-                                <Col className="text-end">₹{subtotal.toFixed(2)}</Col>
-                            </Row>
-                        </ListGroup.Item>
-                        
-                        {/* Coupon Code Section */}
-                        <ListGroup.Item>
-                            <Form>
-                                <Form.Group controlId='coupon'>
-                                    <Form.Label>Have a Coupon?</Form.Label>
-                                    <div className="d-flex">
-                                        <Form.Control
-                                            type='text'
-                                            placeholder='Enter code'
-                                            value={couponCode}
-                                            onChange={(e) => setCouponCode(e.target.value)}
-                                        />
-                                        <Button 
-                                            type='button' 
-                                            onClick={applyCouponHandler} 
-                                            disabled={loading || !couponCode}
-                                            className="ms-2"
-                                        >
-                                            {loading ? '...' : 'Apply'}
-                                        </Button>
-                                    </div>
-                                </Form.Group>
-                                {error && <Alert variant='danger' className='mt-2 small p-2'>{error}</Alert>}
-                            </Form>
-                        </ListGroup.Item>
-
-                        {/* Discount and Grand Total Section */}
-                        {appliedCoupon && (
-                             <ListGroup.Item>
+                            <ListGroup.Item>
                                 <Row>
-                                    <Col>Discount ({appliedCoupon.code})</Col>
-                                    <Col className="text-end" style={{color: 'green'}}>
-                                        - ₹{discount.toFixed(2)}
-                                    </Col>
+                                    <Col>Subtotal ({cartItems.reduce((acc, item) => acc + item.quantity, 0)} items)</Col>
+                                    <Col className="text-end">₹{subtotal.toFixed(2)}</Col>
                                 </Row>
                             </ListGroup.Item>
-                        )}
+                            
+                            <ListGroup.Item>
+                                <Form>
+                                    <Form.Group controlId='coupon'>
+                                        <Form.Label>Have a Coupon?</Form.Label>
+                                        <div className="d-flex">
+                                            <Form.Control
+                                                type='text'
+                                                placeholder='Enter code'
+                                                value={couponCode}
+                                                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                disabled={!!appliedCoupon}
+                                            />
+                                            <Button 
+                                                type='button' 
+                                                onClick={appliedCoupon ? clearCoupon : applyCouponHandler} 
+                                                disabled={loading || (!couponCode && !appliedCoupon)}
+                                                className="ms-2"
+                                                variant={appliedCoupon ? 'danger' : 'primary'}
+                                            >
+                                                {loading ? '...' : (appliedCoupon ? 'Remove' : 'Apply')}
+                                            </Button>
+                                        </div>
+                                    </Form.Group>
+                                    {error && <Alert variant='danger' className='mt-2 small p-2'>{error}</Alert>}
+                                </Form>
+                            </ListGroup.Item>
 
-                        <ListGroup.Item>
-                            <Row>
-                                <Col><strong>Grand Total</strong></Col>
-                                <Col className="text-end"><strong>₹{grandTotal}</strong></Col>
-                            </Row>
-                        </ListGroup.Item>
+                            {appliedCoupon && (
+                                 <ListGroup.Item>
+                                    <Row>
+                                        <Col>Discount ({appliedCoupon.code})</Col>
+                                        <Col className="text-end" style={{color: 'green'}}>
+                                            - ₹{discount.toFixed(2)}
+                                        </Col>
+                                    </Row>
+                                </ListGroup.Item>
+                            )}
 
-                        <ListGroup.Item className="d-grid">
-                            <Button
-                                type="button"
-                                className="btn-block"
-                                disabled={cartItems.length === 0}
-                                onClick={checkoutHandler}
-                            >
-                                Proceed To Checkout
-                            </Button>
-                        </ListGroup.Item>
-                    </ListGroup>
-                </Card>
-            </Col>
-        </Row>
-    </>
-);
+                            <ListGroup.Item>
+                                <Row>
+                                    <Col><strong>Grand Total</strong></Col>
+                                    <Col className="text-end"><strong>₹{grandTotal.toFixed(2)}</strong></Col>
+                                </Row>
+                            </ListGroup.Item>
+
+                            <ListGroup.Item className="d-grid">
+                                <Button
+                                    type="button"
+                                    className="btn-block"
+                                    disabled={cartItems.length === 0}
+                                    onClick={checkoutHandler}
+                                >
+                                    Proceed To Checkout
+                                </Button>
+                            </ListGroup.Item>
+                        </ListGroup>
+                    </Card>
+                </Col>
+            </Row>
+        </>
+    );
 }
 
 export default CartPage;

@@ -16,6 +16,8 @@ const addOrderItems = asyncHandler(async (req, res) => {
     taxPrice,
     shippingPrice,
     totalPrice,
+    couponApplied,
+    discountAmount,   
   } = req.body;
 
   if (orderItems && orderItems.length === 0) {
@@ -24,30 +26,23 @@ const addOrderItems = asyncHandler(async (req, res) => {
     return;
   } else {
     
-    const mappedOrderItems = orderItems.map((item) => ({
-      ...item,
-      qty: Number(item.qty),
-      price: Number(item.price),
-    }));
-
-    
-    const finalTaxPrice = 0;
-    const finalShippingPrice = 0;
-
-    const baseItemsPrice = Number(itemsPrice);
-    const finalTotalPrice = baseItemsPrice + finalTaxPrice + finalShippingPrice;
     const estimatedDate = await calculateEstimatedDelivery(shippingAddress.postalCode);
-    console.log(`Calculated Estimated Delivery Date: ${estimatedDate}`); 
-
+    
     const order = new Order({
-      orderItems: mappedOrderItems,
+      orderItems: orderItems.map((item) => ({
+        ...item,
+        qty: Number(item.qty),
+        price: Number(item.price),
+      })),
       user: req.user._id,
       shippingAddress,
       paymentMethod,
-      itemsPrice: baseItemsPrice,
-      taxPrice: finalTaxPrice,
-      shippingPrice: finalShippingPrice,
-      totalPrice: finalTotalPrice,
+      itemsPrice: Number(itemsPrice),
+      taxPrice: Number(taxPrice),
+      shippingPrice: Number(shippingPrice),
+      couponApplied, // Naya field save kiya
+      discountAmount: Number(discountAmount), // Naya field save kiya
+      totalPrice: Number(totalPrice), // Final price save ki
       estimatedDeliveryDate: estimatedDate,
     });
 

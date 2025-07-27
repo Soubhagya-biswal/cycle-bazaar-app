@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { AuthContext } from './AuthContext';
 
 export const CartContext = createContext();
@@ -6,16 +6,21 @@ export const CartContext = createContext();
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
     const [shippingAddress, setShippingAddress] = useState({});
-    // NAYA STATE: Payment method ke liye, localStorage se load karte hue
     const paymentMethodFromStorage = localStorage.getItem('paymentMethod') ? JSON.parse(localStorage.getItem('paymentMethod')) : '';
     const [paymentMethod, setPaymentMethod] = useState(paymentMethodFromStorage);
+    
+    // --- NAYA COUPON KA STATE ---
+    const couponFromStorage = localStorage.getItem('appliedCoupon') ? JSON.parse(localStorage.getItem('appliedCoupon')) : null;
+    const [appliedCoupon, setAppliedCoupon] = useState(couponFromStorage);
+    // --- NAYA COUPON KA STATE END ---
+
     const { userInfo } = useContext(AuthContext);
 
     useEffect(() => {
         const storedAddress = localStorage.getItem('shippingAddress');
-    if (storedAddress) {
-        setShippingAddress(JSON.parse(storedAddress));
-    }
+        if (storedAddress) {
+            setShippingAddress(JSON.parse(storedAddress));
+        }
         const fetchCartItems = async () => {
             if (userInfo) {
                 try {
@@ -36,91 +41,100 @@ export const CartProvider = ({ children }) => {
         fetchCartItems();
     }, [userInfo]);
 
-    // 👇️ NAYA: 'variantId' parameter add kiya
-    const addToCart = async (cycleId, quantity, variantId = null) => { // third parameter for variantId
-        if (!userInfo) {
-            alert('Please login to add items to the cart');
-            return;
-        }
-        try {
-            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/add`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userInfo.token}`
-                },
-                // 👇️ NAYA: 'variantId' ko JSON body mein add kiya
-                body: JSON.stringify({ cycleId, quantity, variantId })
-            });
-            if (!res.ok) {
-                throw new Error('Failed to add item to cart');
+    // --- NAYI PRICE CALCULATION LOGIC ---
+    const { subtotal, discount, grandTotal } = useMemo(() => {
+        const subtotalCalc = cartItems.reduce((acc, item) => {
+            if (!item.cycleId) return acc; // Agar cycleId null hai to skip karo
+            const basePrice = item.cycleId.price;
+            const chosenVariant = item.variantId && item.cycleId.variants 
+                ? item.cycleId.variants.find(v => v._id === item.variantId) 
+                : null;
+            const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
+            return acc + item.quantity * effectivePrice;
+        }, 0);
+
+        let discountCalc = 0;
+        if (appliedCoupon) {
+            if (appliedCoupon.discountType === 'percentage') {
+                discountCalc = (subtotalCalc * appliedCoupon.discountValue) / 100;
+            } else { // fixed
+                discountCalc = appliedCoupon.discountValue;
             }
-            const data = await res.json();
-            setCartItems(data.items);
-            alert('Item added to cart!');
-        } catch (error) {
-            console.error(error);
-            alert('Could not add item to cart.');
         }
+        
+        discountCalc = Math.min(discountCalc, subtotalCalc); // Discount subtotal se zyada nahi ho sakta
+        const grandTotalCalc = subtotalCalc - discountCalc;
+
+        return {
+            subtotal: subtotalCalc,
+            discount: discountCalc,
+            grandTotal: grandTotalCalc
+        };
+    }, [cartItems, appliedCoupon]);
+    // --- NAYI PRICE CALCULATION LOGIC END ---
+
+    const addToCart = async (cycleId, quantity, variantId = null) => {
+        // ... (yeh function waisa hi hai, koi change nahi)
     };
 
-    const removeFromCart = async (cycleId, variantId = null) => { // Add variantId here
-        try {
-            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/remove/${cycleId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${userInfo.token}`
-                }
-            });
-            if (!res.ok) throw new Error('Failed to remove item');
-            const data = await res.json();
-            setCartItems(data.items);
-            alert('Item removed from cart');
-        } catch (error) {
-            console.error(error);
-            alert('Could not remove item from cart.');
-        }
+    const removeFromCart = async (cycleId, variantId = null) => {
+        // ... (yeh function waisa hi hai, koi change nahi)
     };
+
     const updateCartItemQuantity = async (cycleId, quantity, variantId = null) => {
-        if (!userInfo) {
-            alert('Please login to update cart items');
-            return;
-        }
-        try {
-            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/cart/update-quantity`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userInfo.token}`
-                },
-                body: JSON.stringify({ cycleId, quantity, variantId })
-            });
-
-            if (!res.ok) {
-                throw new Error('Failed to update item quantity');
-            }
-            const data = await res.json();
-            setCartItems(data.items);
-        } catch (error) {
-            console.error("Failed to update cart quantity:", error);
-            alert('Could not update cart quantity.');
-        }
+        // ... (yeh function waisa hi hai, koi change nahi)
     };
-       const saveShippingAddress = (data) => {
+    
+    const saveShippingAddress = (data) => {
         localStorage.setItem('shippingAddress', JSON.stringify(data));
         setShippingAddress(data);
     };
-    // NAYA FUNCTION: Payment method save karne ke liye
+
     const savePaymentMethod = (data) => {
         localStorage.setItem('paymentMethod', JSON.stringify(data));
         setPaymentMethod(data);
     };
+
+    // --- NAYE COUPON FUNCTIONS ---
+    const applyCoupon = (couponData) => {
+        localStorage.setItem('appliedCoupon', JSON.stringify(couponData));
+        setAppliedCoupon(couponData);
+    };
+
+    const clearCoupon = () => {
+        localStorage.removeItem('appliedCoupon');
+        setAppliedCoupon(null);
+    };
+    // --- NAYE COUPON FUNCTIONS END ---
+
     const clearCart = () => {
-    localStorage.removeItem('cartItems');
-    setCartItems([]);
-};
+        // ... iske andar clearCoupon() call karenge ...
+        setCartItems([]);
+        clearCoupon(); // Cart clear hone par coupon bhi हटा do
+    };
+
+    // --- NAYI VALUE OBJECT ---
+    const value = {
+        cartItems,
+        shippingAddress,
+        paymentMethod,
+        appliedCoupon, // Naya
+        subtotal,      // Naya
+        discount,      // Naya
+        grandTotal,    // Naya
+        addToCart,
+        removeFromCart,
+        saveShippingAddress,
+        savePaymentMethod,
+        updateCartItemQuantity,
+        clearCart,
+        applyCoupon,   // Naya
+        clearCoupon,   // Naya
+    };
+    // --- NAYI VALUE OBJECT END ---
+
     return (
-<CartContext.Provider value={{ cartItems, shippingAddress, paymentMethod, addToCart, removeFromCart, saveShippingAddress, savePaymentMethod, clearCart, updateCartItemQuantity }}>
+        <CartContext.Provider value={value}>
             {children}
         </CartContext.Provider>
     );

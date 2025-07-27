@@ -1,61 +1,83 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Row, Col, ListGroup, Image, Card, Alert } from 'react-bootstrap';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 
 function PlaceOrderPage() {
-    const { cartItems, shippingAddress, paymentMethod, clearCart } = useContext(CartContext);
+    // Step 1: Sab kuch CartContext se aa raha hai
+    const { 
+        cartItems, 
+        shippingAddress, 
+        paymentMethod, 
+        clearCart,
+        subtotal,
+        discount,
+        grandTotal,
+        appliedCoupon
+    } = useContext(CartContext);
+
     const { userInfo } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    // Calculate prices
-    const itemsPrice = cartItems.reduce((acc, item) => acc + item.cycleId.price * item.quantity, 0);
-    const shippingPrice = 0;
-    const taxPrice = 0;
-    const totalPrice = (itemsPrice + shippingPrice + taxPrice).toFixed(2);
-
-    const placeOrderHandler = async () => {
-    try {
-        const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${userInfo.token}`,
-            },
-            body: JSON.stringify({
-                orderItems: cartItems.map(item => ({
-                    ...item,
-                    cycle: item.cycleId._id,
-                    name: `${item.cycleId.brand} ${item.cycleId.model}`,
-                    image: item.cycleId.imageUrl,
-                    price: item.cycleId.price,
-                    qty: item.quantity,
-                })),
-                shippingAddress: shippingAddress,
-                paymentMethod: paymentMethod,
-                itemsPrice: itemsPrice.toFixed(2),
-                taxPrice: taxPrice,
-                shippingPrice: shippingPrice.toFixed(2),
-                totalPrice: totalPrice,
-            }),
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || 'Could not place order');
+    useEffect(() => {
+        // Agar address ya payment method nahi hai to user ko wapas bhejo
+        if (!shippingAddress.address) {
+            navigate('/shipping');
+        } else if (!paymentMethod) {
+            navigate('/payment');
         }
-        
-        const createdOrder = await res.json();
-        clearCart();
-        
-       
-        navigate(`/order/${createdOrder._id}`); 
+    }, [shippingAddress, paymentMethod, navigate]);
 
-    } catch (error) {
-        alert(error.message);
-    }
-};
+    // Step 2: placeOrderHandler ab context se sahi price bhejega
+    const placeOrderHandler = async () => {
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+                body: JSON.stringify({
+                    orderItems: cartItems.map(item => {
+                        const basePrice = item.cycleId.price;
+                        const chosenVariant = item.variantId && item.cycleId.variants 
+                            ? item.cycleId.variants.find(v => v._id === item.variantId) 
+                            : null;
+                        const effectivePrice = basePrice + (chosenVariant ? (chosenVariant.additionalPrice || 0) : 0);
+
+                        return {
+                            cycle: item.cycleId._id,
+                            name: `${item.cycleId.brand} ${item.cycleId.model}`,
+                            image: item.cycleId.imageUrl,
+                            price: effectivePrice, // Item ki sahi price
+                            qty: item.quantity,
+                            variant: item.variantId,
+                        };
+                    }),
+                    shippingAddress: shippingAddress,
+                    paymentMethod: paymentMethod,
+                    itemsPrice: subtotal,
+                    taxPrice: 0, // Abhi ke liye 0
+                    shippingPrice: 0, // Abhi ke liye 0
+                    totalPrice: grandTotal,
+                    couponApplied: appliedCoupon ? appliedCoupon.code : 'None',
+                    discountAmount: discount,
+                }),
+            });
+
+            const createdOrder = await res.json();
+            if (!res.ok) {
+                throw new Error(createdOrder.message || 'Could not place order');
+            }
+            
+            clearCart();
+            navigate(`/order/${createdOrder._id}`); 
+
+        } catch (error) {
+            alert(error.message);
+        }
+    };
 
     return (
         <>
@@ -73,8 +95,7 @@ function PlaceOrderPage() {
 
                         <ListGroup.Item>
                             <h2>Payment Method</h2>
-                            <strong>Method: </strong>
-                            {paymentMethod}
+                            <p><strong>Method: </strong>{paymentMethod}</p>
                         </ListGroup.Item>
 
                         <ListGroup.Item>
@@ -102,6 +123,7 @@ function PlaceOrderPage() {
                     </ListGroup>
                 </Col>
                 <Col md={4}>
+                    {/* Step 3: Naya Order Summary Card */}
                     <Card>
                         <ListGroup variant='flush'>
                             <ListGroup.Item>
@@ -110,25 +132,33 @@ function PlaceOrderPage() {
                             <ListGroup.Item>
                                 <Row>
                                     <Col>Items</Col>
-                                    <Col>₹{itemsPrice.toFixed(2)}</Col>
+                                    <Col>₹{subtotal.toFixed(2)}</Col>
                                 </Row>
                             </ListGroup.Item>
                             <ListGroup.Item>
                                 <Row>
                                     <Col>Shipping</Col>
-                                    <Col>₹{shippingPrice.toFixed(2)}</Col>
+                                    <Col>₹0.00</Col>
                                 </Row>
                             </ListGroup.Item>
                             <ListGroup.Item>
                                 <Row>
-                                    <Col>Tax ()</Col>
-                                    <Col>₹{taxPrice}</Col>
+                                    <Col>Tax</Col>
+                                    <Col>₹0.00</Col>
                                 </Row>
                             </ListGroup.Item>
+                            {appliedCoupon && (
+                                <ListGroup.Item>
+                                    <Row>
+                                        <Col>Discount ({appliedCoupon.code})</Col>
+                                        <Col style={{ color: 'green' }}>- ₹{discount.toFixed(2)}</Col>
+                                    </Row>
+                                </ListGroup.Item>
+                            )}
                             <ListGroup.Item>
                                 <Row>
-                                    <Col>Total</Col>
-                                    <Col>₹{totalPrice}</Col>
+                                    <Col><strong>Total</strong></Col>
+                                    <Col><strong>₹{grandTotal.toFixed(2)}</strong></Col>
                                 </Row>
                             </ListGroup.Item>
                             <ListGroup.Item className="d-grid">
