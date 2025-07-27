@@ -237,16 +237,16 @@ const createCycleReview = asyncHandler(async (req, res) => {
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
-        // Check if the user has purchased and received the product
+        // Check if user has purchased the item
         const deliveredOrders = await Order.find({
             user: req.user._id,
             'orderItems.cycle': cycle._id,
             status: 'Delivered',
         });
 
-        if (deliveredOrders.length === 0) {
+        if (deliveredOrders.length === 0 && req.user.role !== 'admin') {
             res.status(400);
-            throw new Error('You can only review products you have purchased and received');
+            throw new Error('You can only review products you have purchased');
         }
 
         const alreadyReviewed = cycle.reviews.find(
@@ -254,22 +254,19 @@ const createCycleReview = asyncHandler(async (req, res) => {
         );
 
         if (alreadyReviewed) {
-            // Agar review pehle se hai, to use update karo
-            alreadyReviewed.rating = Number(rating);
-            alreadyReviewed.comment = comment;
-        } else {
-            // Agar review nahi hai, to naya banao
-            const review = {
-                name: req.user.name,
-                rating: Number(rating),
-                comment,
-                user: req.user._id,
-            };
-            cycle.reviews.push(review);
-            cycle.numReviews = cycle.reviews.length;
+            res.status(400);
+            throw new Error('You have already reviewed this product');
         }
 
-        // Overall rating ko dobara calculate karo
+        const review = {
+            name: req.user.name,
+            rating: Number(rating),
+            comment,
+            user: req.user._id,
+        };
+
+        cycle.reviews.push(review);
+        cycle.numReviews = cycle.reviews.length;
         cycle.rating =
             cycle.reviews.reduce((acc, item) => item.rating + acc, 0) /
             cycle.reviews.length;
