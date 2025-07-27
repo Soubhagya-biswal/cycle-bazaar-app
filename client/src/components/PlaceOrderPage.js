@@ -11,7 +11,7 @@ function PlaceOrderPage() {
 
     // Calculate prices
     const itemsPrice = cartItems.reduce((acc, item) => acc + item.cycleId.price * item.quantity, 0);
-    const shippingPrice = itemsPrice > 10000 ? 0 : 500;
+    const shippingPrice = 0;
     const taxPrice = 0;
     const totalPrice = (itemsPrice + shippingPrice + taxPrice).toFixed(2);
 
