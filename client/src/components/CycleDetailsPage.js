@@ -38,28 +38,27 @@ function CycleDetailsPage() {
             }
 
             setCycle(data);
-            // 👇️ START: NAYE VARIANT INITIALIZATION LOGIC YAHAN (already correct) 👇️
-            // Set initial displayed price and stock from the base cycle
+            
             setCurrentDisplayedPrice(data.price);
             setCurrentDisplayedStock(data.stock);
 
-            // If variants exist, set default selected variant
+            
             if (data.variants && data.variants.length > 0) {
-                // Set default to the first variant's color and size
+                
                 setSelectedColor(data.variants[0].color || '');
                 setSelectedSize(data.variants[0].size || '');
-                // Also set the initial variant ID
+                
                 setSelectedVariantId(data.variants[0]._id);
-                // Update price and stock based on this first variant
+                
                 setCurrentDisplayedPrice(data.price + (data.variants[0].additionalPrice || 0));
                 setCurrentDisplayedStock(data.variants[0].variantStock);
             } else {
-                // Agar variants nahi hain, to default values empty rakhen
+                
                 setSelectedColor('');
                 setSelectedSize('');
                 setSelectedVariantId(null);
             }
-            // 👆️ END: NAYE VARIANT INITIALIZATION LOGIC YAHAN (already correct) 👆️
+            
 
             if (userInfo && userInfo.wishlist && userInfo.wishlist.includes(data._id)) {
                 setInWishlist(true);
@@ -87,7 +86,7 @@ function CycleDetailsPage() {
                 setComment(userReview.comment);
                 setHasReviewed(true);
             } else {
-                // Agar user badalta hai to form reset ho jaye
+                
                 setRating(0);
                 setComment('');
                 setHasReviewed(false);
@@ -99,38 +98,56 @@ function CycleDetailsPage() {
             setLoading(false);
             console.error(err);
         }
-    }, [id, userInfo]); // Dependencies for useCallback
-
+    }, [id, userInfo]); 
     useEffect(() => {
         fetchCycle();
     }, [fetchCycle]);
 
-    // 👇️ START: NAYA USEEFFECT FOR VARIANT SELECTION LOGIC YAHAN (already correct) 👇️
+    
     useEffect(() => {
+        
+        console.log(`Comparing: Color='${selectedColor}', Size='${selectedSize}'`);
+
         if (cycle && cycle.variants && cycle.variants.length > 0) {
             const chosenVariant = cycle.variants.find(
-                (v) => v.color === selectedColor && v.size === selectedSize
+                (v) => 
+                    v.color.trim().toLowerCase() === selectedColor.trim().toLowerCase() && 
+                    v.size.trim().toLowerCase() === selectedSize.trim().toLowerCase()
             );
 
             if (chosenVariant) {
+                console.log('Variant FOUND:', chosenVariant);
                 setCurrentDisplayedPrice(cycle.price + (chosenVariant.additionalPrice || 0));
                 setCurrentDisplayedStock(chosenVariant.variantStock);
-                setSelectedVariantId(chosenVariant._id); // Update selected variant ID
+                setSelectedVariantId(chosenVariant._id);
             } else {
-                // Agar selected combination nahi mila (invalid selection), to base price aur stock dikhao
-                // Ya error message dikhao
+                console.log('Variant NOT found.');
+               
                 setCurrentDisplayedPrice(cycle.price);
-                setCurrentDisplayedStock(0); // Assuming 0 stock if variant not found
+                setCurrentDisplayedStock(0);
                 setSelectedVariantId(null);
             }
         }
     }, [selectedColor, selectedSize, cycle]);
-    // 👆️ END: NAYA USEEFFECT FOR VARIANT SELECTION LOGIC YAHAN (already correct) 👆️
+         useEffect(() => {
+        if (cycle && cycle.variants) {
+            
+            const availableSizes = cycle.variants
+                .filter(v => v.color.trim() === selectedColor.trim())
+                .map(v => v.size);
+
+            
+            if (availableSizes.length > 0) {
+                
+                setSelectedSize(availableSizes[0]);
+            }
+        }
+    }, [selectedColor, cycle]); 
 
 
     const addToCartHandler = () => {
-        // 👇️ NAYA: currentDisplayedStock check karein
-        if (currentDisplayedStock > 0) { // Only add to cart if stock is available
+        
+        if (currentDisplayedStock > 0) { 
             console.log('Add to Cart button clicked!');
             addToCart(cycle._id, 1, selectedVariantId);
         } else {
@@ -139,7 +156,7 @@ function CycleDetailsPage() {
     };
 
     const checkDeliveryDateHandler = async () => {
-        // Pincode validation
+       
         if (!/^\d{6}$/.test(pincode)) {
             setDeliveryError('Please enter a valid 6-digit pincode.');
             setEstimatedDate('');
@@ -151,7 +168,7 @@ function CycleDetailsPage() {
         setEstimatedDate('');
 
         try {
-            // Backend API ko call karenge (yeh hum agle step mein banayenge)
+            
             const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/delivery/estimate`, {
                 method: 'POST',
                 headers: {
@@ -162,11 +179,11 @@ function CycleDetailsPage() {
 
             const data = await res.json();
             if (!res.ok) {
-                // Agar server se error aaye to use dikhayein
+                
                 throw new Error(data.message || 'Could not fetch delivery date.');
             }
             
-            // Success hone par date set karein
+            
             setEstimatedDate(data.estimatedDate);
 
         } catch (err) {
@@ -192,7 +209,7 @@ function CycleDetailsPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
 
-            // Local state (button ke liye) aur global state (refresh ke liye) dono ko update karo
+            
             setInWishlist(!inWishlist);
             updateWishlist(data.wishlist);
 
@@ -221,7 +238,7 @@ function CycleDetailsPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
 
-            setIsSubscribed(!isSubscribed); // Toggle the subscription status
+            setIsSubscribed(!isSubscribed); 
             alert(successMessage);
         } catch (error) {
             alert(`Error: ${error.message}`);
@@ -246,7 +263,7 @@ function CycleDetailsPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
 
-            setIsPriceSubscribed(!isPriceSubscribed); // Toggle the subscription status
+            setIsPriceSubscribed(!isPriceSubscribed); 
             alert(successMessage);
         } catch (error) {
             alert(`Error: ${error.message}`);
@@ -267,9 +284,9 @@ function CycleDetailsPage() {
             if (!res.ok) {
                 throw new Error(data.message || 'Failed to submit review');
             }
-            alert(data.message); // Server se aaya hua message dikhayein
-            setHasReviewed(true); // Review submit/update hone ke baad status set karein
-            fetchCycle(); // This reloads the cycle to show the new review
+            alert(data.message); 
+            setHasReviewed(true); 
+            fetchCycle(); 
         } catch (err) {
             setReviewError(err.message);
         }
@@ -295,7 +312,7 @@ function CycleDetailsPage() {
                 <Col md={6}>
                     <Image src={cycle.imageUrl} alt={cycle.model} fluid />
                 </Col>
-                <Col md={3}> {/* This is the column for Brand, Model, Description, Variants */}
+                <Col md={3}> 
                     <ListGroup variant='flush'>
                         <ListGroup.Item>
                             <h3>{cycle.brand} {cycle.model}</h3>
@@ -303,16 +320,14 @@ function CycleDetailsPage() {
                         <ListGroup.Item>
                             Price: ₹{cycle.price}
                         </ListGroup.Item>
-                        {/* --- Display Description --- */}
+                        
                         <ListGroup.Item>
                             Description: {cycle.description}
                         </ListGroup.Item>
-                        {/* --- END DESCRIPTION --- */}
-
-                        {/* 👇️ START: VARIANT SELECTION UI (already correct) 👇️ */}
+                        
                         {cycle.variants && cycle.variants.length > 0 && (
                             <>
-                                {/* Color Selection */}
+                                
                                 <ListGroup.Item>
                                     <Row className="align-items-center">
                                         <Col>Color:</Col>
@@ -322,7 +337,7 @@ function CycleDetailsPage() {
                                                 value={selectedColor}
                                                 onChange={(e) => setSelectedColor(e.target.value)}
                                             >
-                                                {/* Unique colors option */}
+                                                
                                                 {[...new Set(cycle.variants.map(v => v.color))].map(
                                                     (colorOption) => (
                                                         <option key={colorOption} value={colorOption}>
@@ -335,7 +350,7 @@ function CycleDetailsPage() {
                                     </Row>
                                 </ListGroup.Item>
 
-                                {/* Size Selection */}
+                                
                                 <ListGroup.Item>
                                     <Row className="align-items-center">
                                         <Col>Size:</Col>
@@ -429,7 +444,7 @@ function CycleDetailsPage() {
                     </Card>
                 </Col>
             </Row>
-            {/* NAYA SECTION: Reviews */}
+            
             <Row className="mt-5">
 
                 <Col md={6}>
