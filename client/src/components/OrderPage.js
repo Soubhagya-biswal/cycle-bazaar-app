@@ -61,17 +61,7 @@ function OrderPage() {
             }
             
 
-            if (!data.isPaid && data.paymentMethod === 'Stripe' && !clientSecret) {
-                const paymentRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders/${orderId}/create-payment-intent`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${userInfo.token}` },
-                });
-                const paymentData = await paymentRes.json();
-                if (!paymentRes.ok) {
-                    throw new Error(paymentData.message || 'Failed to create payment intent');
-                }
-                setClientSecret(paymentData.clientSecret);
-            }
+            
         } catch (err) {
             setError(err.message);
             console.error(err);
