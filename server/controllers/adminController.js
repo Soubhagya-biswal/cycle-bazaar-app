@@ -1,15 +1,14 @@
-import User from '../models/user.model.js'; // User model import karein
-import asyncHandler from 'express-async-handler'; // Errors ko handle karne ke liye (npm install express-async-handler agar nahi hai)
+import User from '../models/user.model.js'; 
+import asyncHandler from 'express-async-handler'; 
+import sendEmail from '../utils/sendEmail.js'; // 👈 Top me import karo
 
-// @desc    Get all pending seller applications
-// @route   GET /api/admin/seller-applications
-// @access  Private/Admin
+
 const getSellerApplications = asyncHandler(async (req, res) => {
-    // Sirf 'pending' status wale users ko fetch karein jinki sellerApplicationDetails maujood ho
+    
     const applications = await User.find({
         sellerApplicationStatus: 'pending',
-        'sellerApplicationDetails.businessName': { $exists: true } // Confirm karein ki details bhari hain
-    }).select('-password'); // Security ke liye password field ko exclude karein
+        'sellerApplicationDetails.businessName': { $exists: true } 
+    }).select('-password'); 
 
     res.json(applications);
 });
@@ -19,12 +18,11 @@ const getSellerApplications = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const updateSellerApplicationStatus = asyncHandler(async (req, res) => {
     const userId = req.params.userId;
-    const { status } = req.body; // Frontend se 'approved' ya 'rejected' status aayega
+    const { status } = req.body;
 
     const user = await User.findById(userId);
 
     if (user) {
-        // Status ko validate karein
         if (!['approved', 'rejected'].includes(status)) {
             res.status(400);
             throw new Error('Invalid status provided. Must be "approved" or "rejected".');
@@ -33,14 +31,28 @@ const updateSellerApplicationStatus = asyncHandler(async (req, res) => {
         user.sellerApplicationStatus = status;
 
         if (status === 'approved') {
-            user.isSeller = true; // Agar approve hua to isSeller ko true karein
-            // Optional: Agar aap koi aur action lena chahte hain approval par (jaise email bhej na), to yahan add karein
+            user.isSeller = true;
+
+            // Email bhejo
+            const message = `
+              <h2>Hi ${user.name},</h2>
+              <p>🎉 Great news! Your seller application has been <b>approved</b>.</p>
+              <p>You can now access your seller dashboard and start adding products.</p>
+              <a href="https://yourwebsite.com/seller/dashboard" target="_blank" style="padding: 10px 20px; background: green; color: white; text-decoration: none; border-radius: 5px;">Go to Seller Dashboard</a>
+            `;
+
+            await sendEmail({
+              email: user.email,
+              subject: 'Seller Application Approved ✅',
+              message,
+            });
         } else if (status === 'rejected') {
-            user.isSeller = false; // Reject hone par isSeller false hi rahega
-            // Optional: Rejection par bhi actions (jaise email) add kar sakte hain
+            user.isSeller = false;
+            // Optional: Email on rejection
         }
 
         const updatedUser = await user.save();
+
         res.json({
             message: `Seller application ${status} successfully`,
             user: {
