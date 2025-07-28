@@ -12,6 +12,9 @@ function CouponListScreen() {
     const [discountType, setDiscountType] = useState('percentage');
     const [discountValue, setDiscountValue] = useState('');
     const [expiryDate, setExpiryDate] = useState('');
+    const [isFeatured, setIsFeatured] = useState(false);
+    const [bannerTitle, setBannerTitle] = useState('');
+    const [bannerText, setBannerText] = useState('');
 
     const { userInfo } = useContext(AuthContext);
 
@@ -44,17 +47,31 @@ function CouponListScreen() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${userInfo.token}`,
                 },
-                body: JSON.stringify({ code, discountType, discountValue, expiryDate }),
+                
+                body: JSON.stringify({ 
+                    code, 
+                    discountType, 
+                    discountValue, 
+                    expiryDate,
+                    isFeatured,
+                    bannerTitle,
+                    bannerText
+                }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Failed to create coupon');
+            
             alert('Coupon created successfully!');
-            fetchCoupons(); // Refresh list
-            // Reset form
+            fetchCoupons(); 
+
+            
             setCode('');
             setDiscountType('percentage');
             setDiscountValue('');
             setExpiryDate('');
+            setIsFeatured(false);
+            setBannerTitle('');
+            setBannerText('');
         } catch (err) {
             setError(err.message);
         }
@@ -76,7 +93,45 @@ function CouponListScreen() {
             }
         }
     };
-    
+    const toggleIsFeaturedHandler = async (coupon) => {
+        const action = coupon.isFeatured ? 'un-feature' : 'feature';
+        if (window.confirm(`Are you sure you want to ${action} this coupon? Only one coupon can be featured at a time.`)) {
+            try {
+                // Pehle saare dusre coupons ko un-feature karo
+                await Promise.all(
+                    coupons.map(c => {
+                        if (c.isFeatured) {
+                            return fetch(`${process.env.REACT_APP_API_BASE_URL}/api/coupons/${c._id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${userInfo.token}`,
+                                },
+                                body: JSON.stringify({ isFeatured: false }),
+                            });
+                        }
+                        return Promise.resolve();
+                    })
+                );
+
+                // Ab current coupon ka status toggle karo
+                const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/coupons/${coupon._id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${userInfo.token}`,
+                    },
+                    body: JSON.stringify({ isFeatured: !coupon.isFeatured }), // Status ko ulta kar do
+                });
+                if (!res.ok) throw new Error('Failed to update coupon feature status');
+                
+                alert(`Coupon successfully ${action}d!`);
+                fetchCoupons(); // List refresh karo
+            } catch (err) {
+                setError(err.message);
+            }
+        }
+    };
     return (
         <Row>
             <Col md={4}>
@@ -120,6 +175,38 @@ function CouponListScreen() {
                             onChange={(e) => setExpiryDate(e.target.value)}
                         />
                     </Form.Group>
+                    <Form.Group controlId='isFeatured' className='my-3'>
+                        <Form.Check
+                            type='checkbox'
+                            label='Set as Featured Banner'
+                            checked={isFeatured}
+                            onChange={(e) => setIsFeatured(e.target.checked)}
+                        />
+                    </Form.Group>
+
+                    {isFeatured && (
+                        <>
+                            <Form.Group controlId='bannerTitle' className='my-3'>
+                                <Form.Label>Banner Title</Form.Label>
+                                <Form.Control
+                                    type='text'
+                                    placeholder='e.g., DIWALI SALE'
+                                    value={bannerTitle}
+                                    onChange={(e) => setBannerTitle(e.target.value)}
+                                />
+                            </Form.Group>
+                            <Form.Group controlId='bannerText' className='my-3'>
+                                <Form.Label>Banner Text</Form.Label>
+                                <Form.Control
+                                    as='textarea'
+                                    rows={3}
+                                    placeholder='e.g., Get flat 20% off...'
+                                    value={bannerText}
+                                    onChange={(e) => setBannerText(e.target.value)}
+                                />
+                            </Form.Group>
+                        </>
+                    )}
 
                     <Button type='submit' variant='primary'>
                         Create Coupon
@@ -130,35 +217,45 @@ function CouponListScreen() {
                 <h2>Existing Coupons</h2>
                 {loading ? <p>Loading...</p> : error ? <Alert variant='danger'>{error}</Alert> : (
                     <Table striped bordered hover responsive className='table-sm'>
-                        <thead>
-                            <tr>
-                                <th>CODE</th>
-                                <th>TYPE</th>
-                                <th>VALUE</th>
-                                <th>EXPIRY</th>
-                                <th>ACTIVE</th>
-                                <th>ACTION</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {coupons.map((coupon) => (
-                                <tr key={coupon._id}>
-                                    <td>{coupon.code}</td>
-                                    <td>{coupon.discountType}</td>
-                                    <td>{coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `₹${coupon.discountValue}`}</td>
-                                    <td>{coupon.expiryDate ? new Date(coupon.expiryDate).toLocaleDateString() : 'No Expiry'}</td>
-                                    <td>
-                                        {coupon.isActive ? <i className='fas fa-check' style={{ color: 'green' }}></i> : <i className='fas fa-times' style={{ color: 'red' }}></i>}
-                                    </td>
-                                    <td>
-                                        <Button variant='danger' className='btn-sm' onClick={() => deleteCouponHandler(coupon._id)}>
-                                            <i className='fas fa-trash'></i>
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
+    <thead>
+        <tr>
+            <th>CODE</th>
+            <th>TYPE</th>
+            <th>VALUE</th>
+            <th>FEATURED</th> {/* Naya Column */}
+            <th>ACTIVE</th>
+            <th>ACTION</th>
+        </tr>
+    </thead>
+    <tbody>
+        {coupons.map((coupon) => (
+            <tr key={coupon._id}>
+                <td>{coupon.code}</td>
+                <td>{coupon.discountType}</td>
+                <td>{coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `₹${coupon.discountValue}`}</td>
+                <td> {/* Naya Column Data */}
+                    {coupon.isFeatured ? <i className='fas fa-star' style={{ color: 'gold' }}></i> : ''}
+                </td>
+                <td>
+                    {coupon.isActive ? <i className='fas fa-check' style={{ color: 'green' }}></i> : <i className='fas fa-times' style={{ color: 'red' }}></i>}
+                </td>
+                <td>
+                    {/* Naya Button */}
+                    <Button 
+                        variant={coupon.isFeatured ? 'secondary' : 'warning'} 
+                        className='btn-sm' 
+                        onClick={() => toggleIsFeaturedHandler(coupon)}
+                    >
+                        <i className={coupon.isFeatured ? 'fas fa-star-slash' : 'fas fa-star'}></i>
+                    </Button>
+                    <Button variant='danger' className='btn-sm ms-2' onClick={() => deleteCouponHandler(coupon._id)}>
+                        <i className='fas fa-trash'></i>
+                    </Button>
+                </td>
+            </tr>
+        ))}
+    </tbody>
+</Table>
                 )}
             </Col>
         </Row>

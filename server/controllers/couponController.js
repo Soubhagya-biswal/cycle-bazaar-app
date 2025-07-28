@@ -3,13 +3,17 @@ import Coupon from '../models/coupon.model.js';
 
 
 const createCoupon = asyncHandler(async (req, res) => {
-  const { code, discountType, discountValue, expiryDate } = req.body;
+  const { code, discountType, discountValue, expiryDate, isFeatured, bannerTitle, bannerText } = req.body;
 
-  
   const couponExists = await Coupon.findOne({ code });
   if (couponExists) {
     res.status(400);
     throw new Error('Coupon code already exists');
+  }
+
+  
+  if (isFeatured) {
+    await Coupon.updateMany({}, { $set: { isFeatured: false } });
   }
 
   const coupon = new Coupon({
@@ -17,6 +21,9 @@ const createCoupon = asyncHandler(async (req, res) => {
     discountType,
     discountValue,
     expiryDate,
+    isFeatured,
+    bannerTitle,
+    bannerText,
   });
 
   const createdCoupon = await coupon.save();
@@ -29,14 +36,21 @@ const getAllCoupons = asyncHandler(async (req, res) => {
 });
 
 const updateCoupon = asyncHandler(async (req, res) => {
-  const { isActive, expiryDate } = req.body;
   const coupon = await Coupon.findById(req.params.id);
 
   if (coupon) {
-    coupon.isActive = isActive;
-    if (expiryDate) {
-        coupon.expiryDate = expiryDate;
+    
+    if (req.body.isFeatured === true) {
+      await Coupon.updateMany({ _id: { $ne: req.params.id } }, { $set: { isFeatured: false } });
     }
+    
+    
+    coupon.isActive = req.body.isActive ?? coupon.isActive;
+    coupon.isFeatured = req.body.isFeatured ?? coupon.isFeatured;
+    coupon.bannerTitle = req.body.bannerTitle || coupon.bannerTitle;
+    coupon.bannerText = req.body.bannerText || coupon.bannerText;
+   
+
     const updatedCoupon = await coupon.save();
     res.json(updatedCoupon);
   } else {
@@ -66,7 +80,7 @@ const applyCoupon = asyncHandler(async (req, res) => {
 
   const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
 
-  // Coupon ko check karo
+  
   if (!coupon) {
     res.status(404);
     throw new Error('Invalid coupon code');
@@ -80,11 +94,29 @@ const applyCoupon = asyncHandler(async (req, res) => {
     throw new Error('This coupon has expired');
   }
 
-  // Agar sab theek hai, to discount details bhej do
+  
   res.json({
     code: coupon.code,
     discountType: coupon.discountType,
     discountValue: coupon.discountValue,
   });
 });
-export { createCoupon, getAllCoupons, updateCoupon, deleteCoupon, applyCoupon };
+const getFeaturedCoupon = asyncHandler(async (req, res) => {
+  const featuredCoupon = await Coupon.findOne({
+    isFeatured: true,
+    isActive: true,
+    
+    $or: [
+      { expiryDate: { $exists: false } }, 
+      { expiryDate: { $gt: new Date() } }   
+    ]
+  });
+
+  if (featuredCoupon) {
+    res.json(featuredCoupon);
+  } else {
+    
+    res.json({});
+  }
+});
+export { createCoupon, getAllCoupons, updateCoupon, deleteCoupon, applyCoupon, getFeaturedCoupon };

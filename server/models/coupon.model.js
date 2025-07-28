@@ -27,6 +27,18 @@ const couponSchema = new mongoose.Schema(
       type: Date,
       required: false, // Expiry date optional hai
     },
+    isFeatured: {
+      type: Boolean,
+      default: false, // Taaki har coupon banner par na dikhe
+    },
+    bannerTitle: {
+      type: String,
+      trim: true,
+    },
+    bannerText: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
