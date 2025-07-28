@@ -31,25 +31,38 @@ const updateSellerApplicationStatus = asyncHandler(async (req, res) => {
         user.sellerApplicationStatus = status;
 
         if (status === 'approved') {
-            user.isSeller = true;
+  user.isSeller = true;
 
-            // Email bhejo
-            const message = `
-              <h2>Hi ${user.name},</h2>
-              <p>🎉 Great news! Your seller application has been <b>approved</b>.</p>
-              <p>You can now access your seller dashboard and start adding products.</p>
-              <a href="https://yourwebsite.com/seller/dashboard" target="_blank" style="padding: 10px 20px; background: green; color: white; text-decoration: none; border-radius: 5px;">Go to Seller Dashboard</a>
-            `;
+  const message = `
+    <h2>Hi ${user.name},</h2>
+    <p>🎉 Great news! Your seller application has been <b>approved</b>.</p>
+    <p>You can now access your seller dashboard and start adding products.</p>
+    <a href="https://cycle-bazaar-client.onrender.com/seller/dashboard" target="_blank" style="padding: 10px 20px; background: green; color: white; text-decoration: none; border-radius: 5px;">Go to Seller Dashboard</a>
+  `;
 
-            await sendEmail({
-              email: user.email,
-              subject: 'Seller Application Approved ✅',
-              message,
-            });
-        } else if (status === 'rejected') {
-            user.isSeller = false;
-            // Optional: Email on rejection
-        }
+  await sendEmail({
+    email: user.email,
+    subject: 'Seller Application Approved ✅',
+    message,
+  });
+}
+else if (status === 'rejected') {
+  user.isSeller = false;
+
+  const message = `
+    <h2>Hi ${user.name},</h2>
+    <p>We regret to inform you that your seller application has been <b>rejected</b>.</p>
+    <p>This could be due to missing or invalid details.</p>
+    <p>You can re-apply with updated info at any time.</p>
+  `;
+
+  await sendEmail({
+    email: user.email,
+    subject: 'Seller Application Rejected ❌',
+    message,
+  });
+}
+
 
         const updatedUser = await user.save();
 
