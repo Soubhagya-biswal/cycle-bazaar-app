@@ -3,11 +3,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Row, Col, ListGroup, Image, Card, Alert, Button, Form } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
-import CheckoutForm from './CheckoutForm.js';
 
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+
 
 function OrderPage() {
     const { id: orderId } = useParams();
@@ -88,11 +85,79 @@ function OrderPage() {
             fetchOrder();
         }
     }, [orderId, userInfo]);
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
 
     const paymentSuccessHandler = () => {
         fetchOrder();
     };
+          const razorpayPaymentHandler = async () => {
+        try {
+            // 1. Backend se Razorpay order details lao
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders/${orderId}/razorpay`, {
+                headers: { 'Authorization': `Bearer ${userInfo.token}` },
+            });
+            const razorpayOrder = await res.json();
+            if (!res.ok) {
+                throw new Error(razorpayOrder.message || 'Failed to create Razorpay order');
+            }
 
+            // 2. Razorpay payment window ke options set karo
+            const options = {
+                key: process.env.REACT_APP_RAZORPAY_KEY_ID, // Key ID .env file se aayegi
+                amount: razorpayOrder.amount,
+                currency: razorpayOrder.currency,
+                name: 'Cycle Bazaar',
+                description: `Order Transaction for #${order._id}`,
+                order_id: razorpayOrder.orderId,
+                handler: async function (response) {
+                    // 3. Payment success hone ke baad, backend par verify karo
+                    const verificationRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders/verify-payment`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${userInfo.token}`
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            orderId: order._id,
+                        }),
+                    });
+
+                    const verificationData = await verificationRes.json();
+                    if (!verificationRes.ok) {
+                        throw new Error(verificationData.message || 'Payment verification failed');
+                    }
+                    
+                    alert('Payment successful!');
+                    fetchOrder(); // Page ko refresh karke "Paid" status dikhao
+                },
+                prefill: {
+                    name: userInfo.name,
+                    email: userInfo.email,
+                },
+                theme: {
+                    color: '#3399cc',
+                },
+            };
+
+            // 4. Razorpay window kholo
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+        } catch (err) {
+            alert(err.message);
+        }
+    };
     const updateOrderStatusHandler = async () => {
         try {
             setLoading(true);
@@ -352,16 +417,17 @@ function OrderPage() {
 
                             <ListGroup.Item><Row><Col>Total</Col><Col>₹{order.totalPrice}</Col></Row></ListGroup.Item>
 
-                            {!order.isPaid && order.paymentMethod === 'Stripe' && (
-                                <ListGroup.Item>
-                                    {clientSecret && stripePromise && (
-                                        <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                            <CheckoutForm order={order} clientSecret={clientSecret} onPaymentSuccess={paymentSuccessHandler} />
-                                        </Elements>
-                                    )}
+                            {!order.isPaid && order.paymentMethod !== 'COD' && (
+                                <ListGroup.Item className="d-grid">
+                                    <Button
+                                        type='button'
+                                        className='btn-block'
+                                        onClick={razorpayPaymentHandler}
+                                    >
+                                        Pay with Razorpay
+                                    </Button>
                                 </ListGroup.Item>
                             )}
-
                             
                             {userInfo && userInfo.isAdmin && isAdminView && (
                                 <ListGroup.Item>

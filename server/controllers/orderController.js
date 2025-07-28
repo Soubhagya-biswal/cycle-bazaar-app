@@ -1,117 +1,132 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/order.model.js';
-import User from '../models/user.model.js'; 
-import sendEmail from '../utils/sendEmail.js'; 
-import Stripe from 'stripe';
+import User from '../models/user.model.js';
+import sendEmail from '../utils/sendEmail.js';
 import { calculateEstimatedDelivery } from '../utils/deliveryEstimator.js';
-const stripe = new Stripe('sk_test_51QCAw7LLSgFDTQWj0k89K2TCpDmFss4dKJFug3Z84cThg9TUp2mWzjGPb34O14gyNWfZrp0xFyfMHg95mWPVn2r80066Tm0HsH');
+import Razorpay from 'razorpay'; // Stripe ki jagah Razorpay
+import crypto from 'crypto';     // Payment verify karne ke liye
 
-
+// @desc    Add new order
+// @route   POST /api/orders
+// @access  Private
 const addOrderItems = asyncHandler(async (req, res) => {
-  const {
-    orderItems,
-    shippingAddress,
-    paymentMethod,
-    itemsPrice,
-    taxPrice,
-    shippingPrice,
-    totalPrice,
-    couponApplied,
-    discountAmount,   
-  } = req.body;
+    const {
+        orderItems,
+        shippingAddress,
+        paymentMethod,
+        itemsPrice,
+        taxPrice,
+        shippingPrice,
+        totalPrice,
+        couponApplied,
+        discountAmount,
+    } = req.body;
 
-  if (orderItems && orderItems.length === 0) {
-    res.status(400);
-    throw new Error('No order items');
-    return;
-  } else {
-    
-    const estimatedDate = await calculateEstimatedDelivery(shippingAddress.postalCode);
-    
-    const order = new Order({
-      orderItems: orderItems.map((item) => ({
-        ...item,
-        qty: Number(item.qty),
-        price: Number(item.price),
-      })),
-      user: req.user._id,
-      shippingAddress,
-      paymentMethod,
-      itemsPrice: Number(itemsPrice),
-      taxPrice: Number(taxPrice),
-      shippingPrice: Number(shippingPrice),
-      couponApplied, // Naya field save kiya
-      discountAmount: Number(discountAmount), // Naya field save kiya
-      totalPrice: Number(totalPrice), // Final price save ki
-      estimatedDeliveryDate: estimatedDate,
-    });
+    if (orderItems && orderItems.length === 0) {
+        res.status(400);
+        throw new Error('No order items');
+    } else {
+        const estimatedDate = await calculateEstimatedDelivery(shippingAddress.postalCode);
+        
+        const order = new Order({
+            orderItems: orderItems.map((item) => ({ ...item })),
+            user: req.user._id,
+            shippingAddress,
+            paymentMethod,
+            itemsPrice: Number(itemsPrice),
+            taxPrice: Number(taxPrice),
+            shippingPrice: Number(shippingPrice),
+            couponApplied,
+            discountAmount: Number(discountAmount),
+            totalPrice: Number(totalPrice),
+            estimatedDeliveryDate: estimatedDate,
+        });
 
-    const createdOrder = await order.save();
-
-    res.status(201).json(createdOrder);
-  }
+        const createdOrder = await order.save();
+        res.status(201).json(createdOrder);
+    }
 });
 
-const createPaymentIntent = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+// @desc    Create Razorpay Order
+// @route   GET /api/orders/:id/razorpay
+const createRazorpayOrder = asyncHandler(async (req, res) => {
+    const order = await Order.findById(req.params.id);
 
-  if (order) {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(order.totalPrice * 100), 
-      currency: 'inr',
-      metadata: { order_id: order._id.toString() },
-    });
+    if (order && !order.isPaid) {
+        const razorpayInstance = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
 
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-    });
-  } else {
-    res.status(404);
-    throw new Error('Order not found');
-  }
+        const options = {
+            amount: Math.round(order.totalPrice * 100), // Amount in paise
+            currency: "INR",
+            receipt: order._id.toString(),
+        };
+        const razorpayOrder = await razorpayInstance.orders.create(options);
+        res.json({ orderId: razorpayOrder.id, currency: razorpayOrder.currency, amount: razorpayOrder.amount });
+    } else if (order && order.isPaid) {
+        res.status(400);
+        throw new Error('Order is already paid');
+    } else {
+        res.status(404);
+        throw new Error('Order not found');
+    }
 });
+
+// @desc    Verify Razorpay Payment and Update Order
+// @route   POST /api/orders/verify-payment
+const verifyPayment = asyncHandler(async (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(body.toString())
+        .digest('hex');
+
+    if (expectedSignature === razorpay_signature) {
+        const order = await Order.findById(orderId);
+        if (order) {
+            order.isPaid = true;
+            order.paidAt = Date.now();
+            order.paymentResult = { id: razorpay_payment_id, status: 'Success' };
+            await order.save();
+            res.status(200).json({ message: 'Payment successful' });
+        } else {
+            res.status(404);
+            throw new Error('Order not found');
+        }
+    } else {
+        res.status(400);
+        throw new Error('Payment verification failed');
+    }
+});
+
+
+// --- Baaki ke saare functions waise hi hain ---
 
 const getOrderById = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id).populate('user', 'name email');
-
-  if (order) {
-    
-    console.log('--- Backend Check: Full Order Object ---');
-    console.log(JSON.stringify(order, null, 2));
-    console.log('--------------------------------------');
-
-    console.log('--- Backend Check: Order Items Data Types (After DB Fetch) ---');
-    if (order.orderItems && order.orderItems.length > 0) {
-        order.orderItems.forEach((item, index) => {
-            console.log(`Item ${index + 1}: ${item.name}`);
-            console.log(`  Quantity: ${item.qty}, Type: ${typeof item.qty}`);
-            console.log(`  Price: ${item.price}, Type: ${typeof item.price}`);
-            console.log('----------------------------------------------------');
-        });
+    const order = await Order.findById(req.params.id).populate('user', 'name email');
+    if (order) {
+        res.json(order);
     } else {
-        console.log('No order items found for this order.');
+        res.status(404);
+        throw new Error('Order not found');
     }
-    
-    res.json(order);
-  } else {
-    res.status(404);
-    throw new Error('Order not found');
-  }
 });
 
-
 const getMyOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
-  res.json(orders);
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(orders);
 });
 
 const updateOrderToPaid = asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id);
-
     if (order) {
         order.isPaid = true;
         order.paidAt = Date.now();
-
         if (req.body.id && req.body.status) {
             order.paymentResult = {
                 id: req.body.id,
@@ -120,7 +135,6 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
                 email_address: req.body.email_address,
             };
         }
-
         const updatedOrder = await order.save();
         res.json(updatedOrder);
     } else {
@@ -130,8 +144,8 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
 });
 
 const getAllOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({}).populate('user', 'id name email');
-  res.json(orders);
+    const orders = await Order.find({}).populate('user', 'id name email');
+    res.json(orders);
 });
 const getSellerOrders = asyncHandler(async (req, res) => {
     const sellerId = req.user._id;
@@ -432,4 +446,17 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
         throw new Error('Order not found or no pending cancellation request.');
     }
 });
-export { addOrderItems, getOrderById, createPaymentIntent, updateOrderToPaid, getMyOrders, getAllOrders, updateOrderStatus, deleteOrder, requestOrderCancellation, manageCancellationRequest, getSellerOrders };
+export { 
+    addOrderItems, 
+    getOrderById, 
+    updateOrderToPaid, 
+    getMyOrders, 
+    getAllOrders, 
+    updateOrderStatus, 
+    deleteOrder, 
+    requestOrderCancellation, 
+    manageCancellationRequest, 
+    getSellerOrders,
+    createRazorpayOrder, // Naya Razorpay function
+    verifyPayment      // Naya Razorpay function
+};

@@ -1,6 +1,6 @@
 import User from '../models/user.model.js'; 
 import asyncHandler from 'express-async-handler'; 
-import sendEmail from '../utils/sendEmail.js'; // 👈 Top me import karo
+import sendEmail from '../utils/sendEmail.js'; 
 
 
 const getSellerApplications = asyncHandler(async (req, res) => {
@@ -13,9 +13,6 @@ const getSellerApplications = asyncHandler(async (req, res) => {
     res.json(applications);
 });
 
-// @desc    Update seller application status (Approve/Reject)
-// @route   PUT /api/admin/seller-applications/:userId
-// @access  Private/Admin
 const updateSellerApplicationStatus = asyncHandler(async (req, res) => {
     const userId = req.params.userId;
     const { status } = req.body;
