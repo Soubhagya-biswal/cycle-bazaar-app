@@ -8,7 +8,7 @@ passport.use(
       // Google se mili hui keys
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/api/users/auth/google/callback', // Yeh wahi URL hai jo tune Google Console mein daala tha
+      callbackURL: `${process.env.BACKEND_URL}/api/users/auth/google/callback`, 
     },
     async (accessToken, refreshToken, profile, done) => {
       // Yeh function tab chalta hai jab user Google se successfully login kar leta hai
