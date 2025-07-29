@@ -10,7 +10,6 @@ import './config/passport-setup.js';
 
 // --- Security Packages Imports ---
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import rateLimit from 'express-rate-limit';
 
@@ -37,7 +36,6 @@ app.use(passport.initialize());
 
 // --- Security Middlewares ---
 app.use(helmet());
-app.use(mongoSanitize());
 app.use(hpp());
 
 const limiter = rateLimit({
