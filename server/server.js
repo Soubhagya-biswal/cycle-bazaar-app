@@ -5,10 +5,12 @@ dotenv.config();
 
 import cors from 'cors';
 import mongoose from 'mongoose';
-import passport from 'passport'; // Nayi line 1
-import './config/passport-setup.js'; // Nayi line 2
-
-
+import passport from 'passport'; 
+import './config/passport-setup.js'; 
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
+import hpp from 'hpp';
+import rateLimit from 'express-rate-limit';
 // Route imports
 import cycleRouter from './routes/cycles.js';
 import userRouter from './routes/users.js';
@@ -41,11 +43,21 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(passport.initialize());
+app.use(helmet());
+app.use(mongoSanitize());
+app.use(hpp());
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 15, 
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+});
 
+app.use('/api', limiter);
 // API Routes
 app.use('/cycles', cycleRouter);
 app.use('/api/users', userRouter);
