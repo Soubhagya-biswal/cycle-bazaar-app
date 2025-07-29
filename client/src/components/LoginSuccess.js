@@ -34,7 +34,7 @@ function LoginSuccess() {
     return (
         <div>
             <h2>Logging you in...</h2>
-            <p>Please wait while we redirect you.</p>
+            <p>Please wait while we redirect you.If the page becomes blank then plage refresh the page</p>
         </div>
     );
 }
