@@ -1,7 +1,8 @@
 import asyncHandler from 'express-async-handler'; 
 import User from '../models/user.model.js'; 
 import Cycle from '../models/cycle.model.js';
-
+import logActivity from '../services/logActivity.js';
+import Activity from '../models/activity.model.js';
 
 const getAllUsers = asyncHandler(async (req, res) => {
   // Find all users
@@ -147,6 +148,17 @@ const getMyReviews = asyncHandler(async (req, res) => {
         res.json([]);
     }
 });
+const logoutUser = asyncHandler(async (req, res) => {
+    logActivity(req.user._id, 'LOGOUT');
+    res.status(200).json({ message: 'Logged out successfully' });
+});
+const getAllActivities = asyncHandler(async (req, res) => {
+    const activities = await Activity.find({})
+        .populate('user', 'name email') 
+        .sort({ createdAt: -1 }); 
+    
+    res.json(activities);
+});
 export {
   getAllUsers,
   deleteUser,
@@ -156,5 +168,7 @@ export {
   updateUserProfile,
   getUserAddress,
   updateUserAddress,
-  getMyReviews ,
+    getMyReviews,
+    logoutUser,
+  getAllActivities,
 };

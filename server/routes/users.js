@@ -4,8 +4,8 @@ import jwt from 'jsonwebtoken';
 import passport from 'passport';
 import sendEmail from '../utils/sendEmail.js';
 import { protect, admin } from '../middleware/authMiddleware.js'; 
-import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews } from '../controllers/userController.js';
-
+import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews, logoutUser, getAllActivities  } from '../controllers/userController.js';
+import logActivity from '../services/logActivity.js';
 const router = express.Router();
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
@@ -14,7 +14,7 @@ router.get(
   '/auth/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: '/login' }),
   (req, res) => {
-   
+    logActivity(req.user._id, 'LOGIN');
     const token = jwt.sign({ id: req.user._id, name: req.user.name, isAdmin: req.user.isAdmin, isSeller: req.user.isSeller }, process.env.JWT_SECRET, {
       expiresIn: '1d',
     });
@@ -23,6 +23,7 @@ router.get(
   }
 );
 router.route('/').get(protect, admin, getAllUsers);
+router.route('/activities').get(protect, admin, getAllActivities);
 
 router.route('/register').post(async (req, res) => {
     const { name, email, password } = req.body;
@@ -90,6 +91,7 @@ router.route('/login').post(async (req, res) => {
                 
                 token: token
             });
+            logActivity(user._id, 'LOGIN');
         } else {
             res.status(401).json('Invalid credentials');
         }
@@ -97,7 +99,7 @@ router.route('/login').post(async (req, res) => {
         res.status(500).json('Server error');
     }
 });
-
+router.route('/logout').post(protect, logoutUser);
 
 router.route('/apply-seller').post(protect, async (req, res) => {
     

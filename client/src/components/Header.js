@@ -112,6 +112,9 @@ function Header() {
                                     <LinkContainer to='/admin/coupons'>
                                         <NavDropdown.Item>Manage Coupons</NavDropdown.Item>
                                     </LinkContainer>
+                                    <LinkContainer to='/admin/activities'>
+                                        <NavDropdown.Item>Activity Log</NavDropdown.Item>
+                                    </LinkContainer>
 
                                     <LinkContainer to='/admin/returns'>
                                         <NavDropdown.Item>Return Requests</NavDropdown.Item>
