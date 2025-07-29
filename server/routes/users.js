@@ -1,13 +1,29 @@
 import express from 'express';
 import User from '../models/user.model.js';
 import jwt from 'jsonwebtoken';
+import passport from 'passport';
 import sendEmail from '../utils/sendEmail.js';
 import { protect, admin } from '../middleware/authMiddleware.js'; 
 import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews } from '../controllers/userController.js';
 
 const router = express.Router();
+router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+
+router.get(
+  '/auth/google/callback',
+  passport.authenticate('google', { session: false, failureRedirect: '/login' }),
+  (req, res) => {
+   
+    const token = jwt.sign({ id: req.user._id, isAdmin: req.user.isAdmin, isSeller: req.user.isSeller }, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+    
+    res.redirect(`${process.env.FRONTEND_URL}/login/success?token=${token}`);
+  }
+);
 router.route('/').get(protect, admin, getAllUsers);
-// Register User
+
 router.route('/register').post(async (req, res) => {
     const { name, email, password } = req.body;
     try {
@@ -56,10 +72,10 @@ router.route('/login').post(async (req, res) => {
             const token = jwt.sign({
                 id: user._id,
                 isAdmin: user.isAdmin,
-                // 👇️ IMPORTANT: Login response mein yeh fields bhi add karein
+                
                 isSeller: user.isSeller,
                 sellerApplicationStatus: user.sellerApplicationStatus
-                // 👆️ End of important fields
+                
             }, process.env.JWT_SECRET, {
                 expiresIn: '1d'
             });
@@ -68,10 +84,10 @@ router.route('/login').post(async (req, res) => {
                 name: user.name,
                 email: user.email,
                 isAdmin: user.isAdmin,
-                // 👇️ IMPORTANT: Login response mein yeh fields bhi add karein
+                
                 isSeller: user.isSeller,
                 sellerApplicationStatus: user.sellerApplicationStatus,
-                // 👆️ End of important fields
+                
                 token: token
             });
         } else {
@@ -82,21 +98,21 @@ router.route('/login').post(async (req, res) => {
     }
 });
 
-// 👇️ START: NAYA 'APPLY SELLER' ROUTE YAHAN ADD KAREIN 👇️
+
 router.route('/apply-seller').post(protect, async (req, res) => {
-    // Frontend se bheji gayi details ko req.body se extract karein
+    
     const { businessName, businessDescription, email, phoneNumber, businessAddress, gstin } = req.body;
-    const userId = req.user._id; // protect middleware se authenticated user ki ID mil jaegi
+    const userId = req.user._id; 
 
     try {
-        // User ko database se fetch karein
+        
         const user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Check karein ki user already seller hai ya application pending hai
+        
         if (user.isSeller) {
             return res.status(400).json({ message: 'You are already a seller.' });
         }
@@ -104,7 +120,7 @@ router.route('/apply-seller').post(protect, async (req, res) => {
             return res.status(400).json({ message: 'Your seller application is already pending review.' });
         }
 
-        // User ke seller application details ko update karein
+        
         user.sellerApplicationDetails = {
             businessName,
             businessDescription,
@@ -113,18 +129,9 @@ router.route('/apply-seller').post(protect, async (req, res) => {
             businessAddress,
             gstin
         };
-        user.sellerApplicationStatus = 'pending'; // Status ko 'pending' par set karein
+        user.sellerApplicationStatus = 'pending'; 
 
-        await user.save(); // User document ko save karein
-
-        // Admin ko email notification bhejne ka logic (Optional, but good practice)
-        // const adminEmail = 'admin@example.com'; // Admin ka email address
-        // const adminMessage = `<h1>New Seller Application</h1>
-        //                      <p>A new seller application has been submitted by ${user.name} (${user.email}).</p>
-        //                      <p>Business Name: ${businessName}</p>
-        //                      <p>Status: Pending review.</p>
-        //                      <p>Please log in to the admin dashboard to review.</p>`;
-        // await sendEmail({ email: adminEmail, subject: 'New Seller Application Received', message: adminMessage });
+        await user.save(); 
 
         res.status(200).json({ message: 'Seller application submitted successfully! Waiting for admin review.' });
 

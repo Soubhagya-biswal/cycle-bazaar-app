@@ -32,7 +32,7 @@ import SellerProductListPage from './components/SellerProductListPage';
 import SellerProductForm from './components/SellerProductForm';
 import SellerDashboardPage from './components/SellerDashboardPage';
 import CouponListScreen from './components/CouponListScreen'; 
-
+import LoginSuccess from './components/LoginSuccess';
 
 function App() {
   return (
@@ -67,6 +67,7 @@ function App() {
              <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/login/success" element={<LoginSuccess />} />
             <Route path="/verify/:token" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />

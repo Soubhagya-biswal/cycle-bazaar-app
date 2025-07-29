@@ -1,9 +1,13 @@
+import './config/dotenv-config.js';
 import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 
 import cors from 'cors';
 import mongoose from 'mongoose';
+import passport from 'passport'; // Nayi line 1
+import './config/passport-setup.js'; // Nayi line 2
+
 
 // Route imports
 import cycleRouter from './routes/cycles.js';
@@ -36,7 +40,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
-
+app.use(passport.initialize());
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
