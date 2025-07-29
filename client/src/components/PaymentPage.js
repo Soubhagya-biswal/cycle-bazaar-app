@@ -12,8 +12,7 @@ function PaymentPage() {
         navigate('/shipping');
     }
 
-    const [paymentMethodName, setPaymentMethodName] = useState(paymentMethod || 'Stripe');
-
+    const [paymentMethodName, setPaymentMethodName] = useState(paymentMethod || 'Razorpay');
     const submitHandler = (e) => {
     e.preventDefault();
     savePaymentMethod(paymentMethodName);
@@ -27,16 +26,19 @@ function PaymentPage() {
                     <Form.Group>
                         <Form.Label as='legend'>Select Method</Form.Label>
                         <Col className="mt-2">
+                            
                             <Form.Check
-                                type='radio'
-                                label='Stripe or Credit Card'
-                                id='Stripe'
-                                name='paymentMethod'
-                                value='Stripe'
-                                checked={paymentMethodName === 'Stripe'}
-                                onChange={(e) => setPaymentMethodName(e.target.value)}
-                                className="mb-2"
-                            ></Form.Check>
+                          type='radio'
+                         label='Pay Online (Card, UPI, Netbanking)'
+                          id='Razorpay'
+                         name='paymentMethod'
+                          value='Razorpay'
+                         checked={paymentMethodName === 'Razorpay'}
+                           onChange={(e) => setPaymentMethodName(e.target.value)}
+                          className="mb-2"
+                         ></Form.Check>
+
+                            
                             <Form.Check
                                 type='radio'
                                 label='Cash on Delivery (COD)'
