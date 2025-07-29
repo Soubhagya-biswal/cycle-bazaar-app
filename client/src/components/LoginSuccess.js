@@ -21,7 +21,7 @@ function LoginSuccess() {
                     token: token
                 };
                 login(userData); // login function se user ko login karwao
-                navigate('/'); // Homepage par bhej do
+                window.location.href = '/'; 
             } catch (error) {
                 console.error("Failed to decode token", error);
                 navigate('/login'); // Galti hone par login page par bhej do
