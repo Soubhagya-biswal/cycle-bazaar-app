@@ -29,51 +29,26 @@ const getAdminCycles = asyncHandler(async (req, res) => {
     const cycles = await Cycle.find({}); 
     res.json(cycles);
 });
-// cycleController.js
-
 const addCycle = asyncHandler(async (req, res) => {
-    // req.body se saari values nikal rahe hain
-    const { brand, model, marketPrice, ourPrice, imageUrl, description, stock, variants } = req.body;
-
-    // Optional: Add a console.log here to re-confirm before creating the new Cycle instance
-    console.log('--- Inside addCycle (Final Check) ---');
-    console.log('Received from Frontend:', { brand, model, marketPrice, ourPrice, imageUrl, description, stock, variants });
+    const { brand, model, marketPrice, ourPrice, imageUrl, description, stock } = req.body;
 
     const newCycle = new Cycle({
         brand,
         model,
-        // *** YAHAN PAR PRICES KO SAFELY PARSE KARO ***
-        // Agar frontend se direct number aa raha hai, to Number() hi کافی ہے.
-        // Lekin agar string ho sakta hai (even from type="number" input), to yeh robust way hai.
-        marketPrice: typeof marketPrice === 'number' ? marketPrice : (marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : 0),
-        ourPrice: typeof ourPrice === 'number' ? ourPrice : (ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : 0),
-        // *** YAHAN TAK ***
-        variants: variants || [], // Ensure variants array is saved. Agar empty hai toh empty array.
+        marketPrice: Number(marketPrice),
+        ourPrice: Number(ourPrice),
         imageUrl,
         description,
-        stock: Number(stock), // Ensure stock is converted to a number
+        stock: Number(stock),
         seller: req.user._id, 
         rating: 0,
         numReviews: 0,
     });
-     console.log('--- Debug: After creating new Cycle instance (before save) ---');
-    console.log('newCycle.marketPrice:', newCycle.marketPrice);
-    console.log('newCycle.ourPrice:', newCycle.ourPrice);
-    console.log('newCycle.stock:', newCycle.stock);
-    console.log('newCycle.variants:', newCycle.variants);
-    console.log('------------------------------------------------------------');
 
     const createdCycle = await newCycle.save();
-     console.log('--- Debug: After saving to database ---');
-    console.log('createdCycle.marketPrice:', createdCycle.marketPrice);
-    console.log('createdCycle.ourPrice:', createdCycle.ourPrice);
-    console.log('createdCycle.stock:', createdCycle.stock);
-    console.log('createdCycle.variants:', createdCycle.variants);
-    console.log('------------------------------------------------------------');
-    console.log('Successfully Saved Cycle Data:', createdCycle); // Dekhne ke liye kya save hua
-    console.log('--- Exiting addCycle ---');
     res.status(201).json({ message: 'New Cycle added successfully!', cycle: createdCycle });
 });
+
 const getCycleById = asyncHandler(async (req, res) => {
   const cycle = await Cycle.findById(req.params.id);
 
@@ -94,36 +69,17 @@ const updateCycle = asyncHandler(async (req, res) => {
     if (cycle) {
         const oldStock = cycle.stock;
         const oldPrice = cycle.ourPrice; 
-        console.log('--- Inside updateCycle ---');
-        console.log('Received req.body:', req.body);
-        console.log('Parsed marketPrice:', marketPrice);
-        console.log('Parsed ourPrice:', ourPrice);
         const newPrice = Number(ourPrice); 
 
         cycle.brand = brand || cycle.brand;
         cycle.model = model || cycle.model;
-        cycle.marketPrice = typeof marketPrice === 'number' ? marketPrice : (marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : cycle.marketPrice);
-        cycle.ourPrice = typeof ourPrice === 'number' ? ourPrice : (ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : cycle.ourPrice);
+        cycle.marketPrice = Number(marketPrice) || cycle.marketPrice; 
+        cycle.ourPrice = newPrice || cycle.ourPrice; 
         cycle.imageUrl = imageUrl || cycle.imageUrl;
         cycle.description = description || cycle.description;
         cycle.stock = Number(stock);
-        cycle.variants = variants || [];
-        console.log('--- Debug: Before saving updated Cycle (after assigning new values) ---');
-        console.log('cycle.marketPrice:', cycle.marketPrice);
-        console.log('cycle.ourPrice:', cycle.ourPrice);
-        console.log('cycle.stock:', cycle.stock);
-        console.log('cycle.variants:', cycle.variants);
-        console.log('------------------------------------------------------------');
         const updatedCycle = await cycle.save();
-        console.log('--- Debug: After saving updated Cycle to database ---');
-        console.log('updatedCycle.marketPrice:', updatedCycle.marketPrice);
-        console.log('updatedCycle.ourPrice:', updatedCycle.ourPrice);
-        console.log('updatedCycle.stock:', updatedCycle.stock);
-        console.log('updatedCycle.variants:', updatedCycle.variants);
-        console.log('------------------------------------------------------------');
-        // *** YAHAN TAK ***
-        console.log('Successfully Updated Cycle Data:', updatedCycle); 
-        console.log('--- Exiting updateCycle ---');
+
         
         if (oldStock === 0 && updatedCycle.stock > 0 && updatedCycle.subscribers.length > 0) {
             

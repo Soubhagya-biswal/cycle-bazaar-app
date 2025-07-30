@@ -4,38 +4,34 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // To get userInfo and token
 
 function SellerProductForm() {
-    const { id: productId } = useParams();
+    const { id: productId } = useParams(); 
     const navigate = useNavigate();
     const { userInfo } = useContext(AuthContext);
 
-    // Ye saare form fields ke liye states hain
     const [brand, setBrand] = useState('');
     const [model, setModel] = useState('');
-    const [price, setPrice] = useState(0); // This will be 'Our Price'
-    const [marketPrice, setMarketPrice] = useState(0); // State for Market Price
+    const [price, setPrice] = useState(0);
     const [imageUrl, setImageUrl] = useState('');
     const [description, setDescription] = useState('');
-    const [variants, setVariants] = useState([]);
-    const [stock, setStock] = useState(0); // **Yeh 'stock' field ab yahan define hai**
+    const [variants, setVariants] = useState([]); 
+    
 
-    // **Yeh zaroori states hain jo previous errors de rahe the agar missing the**
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState(''); // For success messages
 
-    // isEditMode variable bhi yahan define hai
-    const isEditMode = Boolean(productId);
+    const isEditMode = Boolean(productId); // Check karein ki edit mode hai ya create mode
 
     // Redirect if not logged in or not a seller
     useEffect(() => {
         if (!userInfo || !userInfo.isSeller) {
-            navigate('/login'); // Or to a forbidden page
+            navigate('/login');
         }
     }, [userInfo, navigate]);
 
     // Fetch product details if in edit mode
     useEffect(() => {
-        if (isEditMode && userInfo) {
+        if (isEditMode && userInfo) { // Only fetch if in edit mode and user is logged in
             const fetchProduct = async () => {
                 setLoading(true);
                 setError('');
@@ -51,14 +47,14 @@ function SellerProductForm() {
                         throw new Error(data.message || 'Failed to fetch product details');
                     }
 
+                    
                     setBrand(data.brand);
                     setModel(data.model);
-                    setPrice(data.ourPrice); // Backend se 'ourPrice' aayega
-                    setMarketPrice(data.marketPrice || 0);
+                    setPrice(data.price);
                     setImageUrl(data.imageUrl);
                     setDescription(data.description);
-                    setVariants(data.variants || []);
-                    setStock(data.stock); // **Ensure stock is loaded in edit mode**
+                    setVariants(data.variants || []); 
+                    
 
                 } catch (err) {
                     setError(err.message || 'Error loading product for editing.');
@@ -69,8 +65,7 @@ function SellerProductForm() {
             };
             fetchProduct();
         }
-    }, [isEditMode, productId, userInfo]);
-
+    }, [isEditMode, productId, userInfo]); // Depend on these values
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -78,25 +73,8 @@ function SellerProductForm() {
         setError('');
         setMessage('');
 
-        // Filter out empty variants before sending to backend
-        // Yeh line ensure karti hai ki agar user ne 'Add Variant' click kiya par kuch bhara nahi,
-        // toh woh empty variant backend ko na jaye aur validation error na de.
-        const filteredVariants = variants.filter(
-            (variant) =>
-                variant.color || variant.size || variant.additionalPrice > 0 || variant.variantStock > 0
-        );
-
-        // Product data jo backend ko jayega
-        const productData = {
-            brand,
-            model,
-            price, // 'ourPrice' ka value
-            marketPrice,
-            imageUrl,
-            description,
-            stock, // **'stock' field yahan include kiya hai**
-            variants: filteredVariants // Filtered variants bhej rahe hain
-        };
+       
+        const productData = { brand, model, price, imageUrl, description, variants };
         let url = `${process.env.REACT_APP_API_BASE_URL}/api/seller/products`;
         let method = 'POST';
 
@@ -118,12 +96,11 @@ function SellerProductForm() {
             const data = await res.json();
 
             if (!res.ok) {
-                // **Yeh line backend se aane wale error ko console mein dikhayegi**
-                console.error('Backend Error Response:', data);
                 throw new Error(data.message || `Failed to ${isEditMode ? 'update' : 'create'} product.`);
             }
 
             setMessage(data.message || `Product ${isEditMode ? 'updated' : 'created'} successfully!`);
+            // Optional: Redirect to seller's product list after success
             navigate('/seller/products');
         } catch (err) {
             setError(err.message || `Error ${isEditMode ? 'updating' : 'creating'} product.`);
@@ -165,27 +142,15 @@ function SellerProductForm() {
                             />
                         </Form.Group>
 
-                        <Form.Group controlId="marketPrice" className="mb-3">
-                            <Form.Label>Market Price (₹)</Form.Label>
-                            <Form.Control
-                                type="number"
-                                placeholder="Enter actual market price"
-                                value={marketPrice}
-                                onChange={(e) => setMarketPrice(Number(e.target.value))}
-                                min="0"
-                                // 'required' attribute frontend se hata diya hai, default backend mein 0 hai
-                            />
-                        </Form.Group>
-
                         <Form.Group controlId="price" className="mb-3">
-                            <Form.Label>Our Price (₹)</Form.Label>
+                            <Form.Label>Price</Form.Label>
                             <Form.Control
                                 type="number"
-                                placeholder="Enter your selling price"
+                                placeholder="Enter price"
                                 value={price}
                                 onChange={(e) => setPrice(Number(e.target.value))}
+                                required
                                 min="0"
-                                // 'required' attribute frontend se hata diya hai, default backend mein 0 hai
                             />
                         </Form.Group>
 
@@ -212,19 +177,6 @@ function SellerProductForm() {
                             />
                         </Form.Group>
 
-                        {/* **Base Stock field** */}
-                        <Form.Group controlId="stock" className="mb-3">
-                            <Form.Label>Base Stock</Form.Label>
-                            <Form.Control
-                                type="number"
-                                placeholder="Enter overall stock for the product (if no variants, this is total stock)"
-                                value={stock}
-                                onChange={(e) => setStock(Number(e.target.value))}
-                                required // Stock field required hai
-                                min="0"
-                            />
-                        </Form.Group>
-
                         <h4 className="mt-4">Product Variants</h4>
                         <p className="text-muted">Define different colors, sizes, or types for this product.</p>
 
@@ -233,7 +185,7 @@ function SellerProductForm() {
                         )}
 
                         {variants.map((variant, index) => (
-                            <div key={index} className="mb-3 p-3 border rounded">
+                            <div key={index} className="mb-3 p-3 border rounded"> {/* Unique key for each variant */}
                                 <Row className="mb-2 align-items-end">
                                     <Col md={5}>
                                         <Form.Group controlId={`variantColor${index}`}>
@@ -247,8 +199,7 @@ function SellerProductForm() {
                                                     newVariants[index].color = e.target.value;
                                                     setVariants(newVariants);
                                                 }}
-                                                // Required agar user ne koi bhi variant field touch kiya hai
-                                                required={!!(variant.color || variant.size || variant.additionalPrice > 0 || variant.variantStock > 0)}
+                                                required
                                             />
                                         </Form.Group>
                                     </Col>
@@ -264,7 +215,7 @@ function SellerProductForm() {
                                                     newVariants[index].size = e.target.value;
                                                     setVariants(newVariants);
                                                 }}
-                                                required={!!(variant.color || variant.size || variant.additionalPrice > 0 || variant.variantStock > 0)}
+                                                required
                                             />
                                         </Form.Group>
                                     </Col>
@@ -295,7 +246,7 @@ function SellerProductForm() {
                                                     newVariants[index].additionalPrice = Number(e.target.value);
                                                     setVariants(newVariants);
                                                 }}
-                                                required={!!(variant.color || variant.size || variant.additionalPrice > 0 || variant.variantStock > 0)}
+                                                required
                                                 min="0"
                                             />
                                         </Form.Group>
@@ -312,7 +263,7 @@ function SellerProductForm() {
                                                     newVariants[index].variantStock = Number(e.target.value);
                                                     setVariants(newVariants);
                                                 }}
-                                                required={!!(variant.color || variant.size || variant.additionalPrice > 0 || variant.variantStock > 0)}
+                                                required
                                                 min="0"
                                             />
                                         </Form.Group>
