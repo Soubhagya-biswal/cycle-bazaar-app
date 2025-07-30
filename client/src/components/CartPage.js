@@ -83,7 +83,7 @@ function CartPage() {
                         <ListGroup variant="flush">
                             {cartItems.map(item => {
                                 // Price calculation for each item
-                                const basePrice = item.cycleId.price;
+                                const basePrice = item.cycleId.ourPrice;
                                 const chosenVariant = item.variantId && item.cycleId.variants 
                                     ? item.cycleId.variants.find(v => v._id === item.variantId) 
                                     : null;

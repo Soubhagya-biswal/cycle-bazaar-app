@@ -75,9 +75,17 @@ function CycleList() {
                   <Card.Img variant="top" src={cycle.imageUrl} style={{ height: '200px', objectFit: 'cover' }} />
                   <Card.Body className="d-flex flex-column">
                     <Card.Title as="div"><strong>{cycle.brand} {cycle.model}</strong></Card.Title>
-                    <Card.Text as="h3" className="mt-auto">
-                      ₹{cycle.price}
-                    </Card.Text>
+                    <div className="mt-auto pt-2">
+    <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+        ₹{cycle.ourPrice}
+    </span>
+
+    {cycle.marketPrice > cycle.ourPrice && (
+        <span className="ms-2 text-muted">
+            <del>₹{cycle.marketPrice}</del>
+        </span>
+    )}
+</div>
                     <LinkContainer to={`/cycle/${cycle._id}`}>
                       <Button variant="primary">View Details</Button>
                     </LinkContainer>
