@@ -4,18 +4,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // To get userInfo and token
 
 function SellerProductForm() {
-    const { id: productId } = useParams(); 
+    const { id: productId } = useParams();
     const navigate = useNavigate();
     const { userInfo } = useContext(AuthContext);
 
+    // Form fields' state
     const [brand, setBrand] = useState('');
     const [model, setModel] = useState('');
-    const [price, setPrice] = useState(0);
+    const [price, setPrice] = useState(0); // This will be 'Our Price'
+    const [marketPrice, setMarketPrice] = useState(0); // State for Market Price
     const [imageUrl, setImageUrl] = useState('');
     const [description, setDescription] = useState('');
-    const [variants, setVariants] = useState([]); 
-    
+    const [variants, setVariants] = useState([]);
+    const [stock, setStock] = useState(0); // **Stock ke liye state**
 
+    // **IMPORTANT: Yeh saare state declarations yahan hone chahiye**
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState(''); // For success messages
@@ -25,13 +28,13 @@ function SellerProductForm() {
     // Redirect if not logged in or not a seller
     useEffect(() => {
         if (!userInfo || !userInfo.isSeller) {
-            navigate('/login');
+            navigate('/login'); // Or to a forbidden page
         }
     }, [userInfo, navigate]);
 
     // Fetch product details if in edit mode
     useEffect(() => {
-        if (isEditMode && userInfo) { // Only fetch if in edit mode and user is logged in
+        if (isEditMode && userInfo) {
             const fetchProduct = async () => {
                 setLoading(true);
                 setError('');
@@ -47,14 +50,14 @@ function SellerProductForm() {
                         throw new Error(data.message || 'Failed to fetch product details');
                     }
 
-                    
                     setBrand(data.brand);
                     setModel(data.model);
-                    setPrice(data.price);
+                    setPrice(data.ourPrice); // Backend se 'ourPrice' aayega
+                    setMarketPrice(data.marketPrice || 0);
                     setImageUrl(data.imageUrl);
                     setDescription(data.description);
-                    setVariants(data.variants || []); 
-                    
+                    setVariants(data.variants || []);
+                    setStock(data.stock); // **Ensure stock is loaded in edit mode**
 
                 } catch (err) {
                     setError(err.message || 'Error loading product for editing.');
@@ -65,7 +68,8 @@ function SellerProductForm() {
             };
             fetchProduct();
         }
-    }, [isEditMode, productId, userInfo]); // Depend on these values
+    }, [isEditMode, productId, userInfo]);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -73,8 +77,8 @@ function SellerProductForm() {
         setError('');
         setMessage('');
 
-       
-        const productData = { brand, model, price, imageUrl, description, variants };
+        // Include 'stock' in the productData
+        const productData = { brand, model, price, marketPrice, imageUrl, description, stock, variants };
         let url = `${process.env.REACT_APP_API_BASE_URL}/api/seller/products`;
         let method = 'POST';
 
@@ -96,11 +100,11 @@ function SellerProductForm() {
             const data = await res.json();
 
             if (!res.ok) {
+                console.error('Backend Error Response:', data);
                 throw new Error(data.message || `Failed to ${isEditMode ? 'update' : 'create'} product.`);
             }
 
             setMessage(data.message || `Product ${isEditMode ? 'updated' : 'created'} successfully!`);
-            // Optional: Redirect to seller's product list after success
             navigate('/seller/products');
         } catch (err) {
             setError(err.message || `Error ${isEditMode ? 'updating' : 'creating'} product.`);
@@ -142,14 +146,24 @@ function SellerProductForm() {
                             />
                         </Form.Group>
 
-                        <Form.Group controlId="price" className="mb-3">
-                            <Form.Label>Price</Form.Label>
+                        <Form.Group controlId="marketPrice" className="mb-3">
+                            <Form.Label>Market Price (₹)</Form.Label>
                             <Form.Control
                                 type="number"
-                                placeholder="Enter price"
+                                placeholder="Enter actual market price"
+                                value={marketPrice}
+                                onChange={(e) => setMarketPrice(Number(e.target.value))}
+                                min="0"
+                            />
+                        </Form.Group>
+
+                        <Form.Group controlId="price" className="mb-3">
+                            <Form.Label>Our Price (₹)</Form.Label>
+                            <Form.Control
+                                type="number"
+                                placeholder="Enter your selling price"
                                 value={price}
                                 onChange={(e) => setPrice(Number(e.target.value))}
-                                required
                                 min="0"
                             />
                         </Form.Group>
@@ -161,7 +175,6 @@ function SellerProductForm() {
                                 placeholder="Enter image URL"
                                 value={imageUrl}
                                 onChange={(e) => setImageUrl(e.target.value)}
-                                // required is false as it has a default in backend
                             />
                         </Form.Group>
 
@@ -177,6 +190,19 @@ function SellerProductForm() {
                             />
                         </Form.Group>
 
+                        {/* **Stock field** */}
+                        <Form.Group controlId="stock" className="mb-3">
+                            <Form.Label>Base Stock</Form.Label>
+                            <Form.Control
+                                type="number"
+                                placeholder="Enter overall stock for the product (if no variants, this is total stock)"
+                                value={stock}
+                                onChange={(e) => setStock(Number(e.target.value))}
+                                required
+                                min="0"
+                            />
+                        </Form.Group>
+
                         <h4 className="mt-4">Product Variants</h4>
                         <p className="text-muted">Define different colors, sizes, or types for this product.</p>
 
@@ -185,7 +211,7 @@ function SellerProductForm() {
                         )}
 
                         {variants.map((variant, index) => (
-                            <div key={index} className="mb-3 p-3 border rounded"> {/* Unique key for each variant */}
+                            <div key={index} className="mb-3 p-3 border rounded">
                                 <Row className="mb-2 align-items-end">
                                     <Col md={5}>
                                         <Form.Group controlId={`variantColor${index}`}>
@@ -199,7 +225,7 @@ function SellerProductForm() {
                                                     newVariants[index].color = e.target.value;
                                                     setVariants(newVariants);
                                                 }}
-                                                required
+                                                required={!!(variant.color || variant.size || variant.additionalPrice || variant.variantStock)}
                                             />
                                         </Form.Group>
                                     </Col>
@@ -215,7 +241,7 @@ function SellerProductForm() {
                                                     newVariants[index].size = e.target.value;
                                                     setVariants(newVariants);
                                                 }}
-                                                required
+                                                required={!!(variant.color || variant.size || variant.additionalPrice || variant.variantStock)}
                                             />
                                         </Form.Group>
                                     </Col>
@@ -246,7 +272,7 @@ function SellerProductForm() {
                                                     newVariants[index].additionalPrice = Number(e.target.value);
                                                     setVariants(newVariants);
                                                 }}
-                                                required
+                                                required={!!(variant.color || variant.size || variant.additionalPrice || variant.variantStock)}
                                                 min="0"
                                             />
                                         </Form.Group>
@@ -263,7 +289,7 @@ function SellerProductForm() {
                                                     newVariants[index].variantStock = Number(e.target.value);
                                                     setVariants(newVariants);
                                                 }}
-                                                required
+                                                required={!!(variant.color || variant.size || variant.additionalPrice || variant.variantStock)}
                                                 min="0"
                                             />
                                         </Form.Group>

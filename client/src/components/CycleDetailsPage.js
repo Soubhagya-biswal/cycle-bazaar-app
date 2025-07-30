@@ -23,10 +23,11 @@ function CycleDetailsPage() {
     const [currentDisplayedStock, setCurrentDisplayedStock] = useState(0);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
     const [pincode, setPincode] = useState('');
-    const [deliveryLoading, setDeliveryLoading] = useState(false);
-    const [deliveryError, setDeliveryError] = useState('');
+    const [deliveryLoading, setDeliveryLoading] = useState(false);
+    const [deliveryError, setDeliveryError] = useState('');
     const [estimatedDate, setEstimatedDate] = useState('');
     const [hasReviewed, setHasReviewed] = useState(false);
+
     const fetchCycle = useCallback(async () => {
         try {
             setLoading(true);
@@ -38,116 +39,123 @@ function CycleDetailsPage() {
             }
 
             setCycle(data);
-            
+
+            // Set initial displayed price and stock from base product or first variant
+            // Assuming 'ourPrice' is the base price of the product
             setCurrentDisplayedPrice(data.ourPrice);
             setCurrentDisplayedStock(data.stock);
 
-            
             if (data.variants && data.variants.length > 0) {
-                
+                // If variants exist, default to the first variant's details
                 setSelectedColor(data.variants[0].color || '');
                 setSelectedSize(data.variants[0].size || '');
-                
                 setSelectedVariantId(data.variants[0]._id);
-                
+
+                // Calculate price for the initial variant
                 setCurrentDisplayedPrice(data.ourPrice + (data.variants[0].additionalPrice || 0));
                 setCurrentDisplayedStock(data.variants[0].variantStock);
             } else {
-                
+                // If no variants, clear variant selections
                 setSelectedColor('');
                 setSelectedSize('');
                 setSelectedVariantId(null);
             }
-            
 
+            // Wishlist status check
             if (userInfo && userInfo.wishlist && userInfo.wishlist.includes(data._id)) {
                 setInWishlist(true);
             } else {
                 setInWishlist(false);
             }
 
+            // Stock subscription status check
             if (userInfo && data.subscribers && data.subscribers.includes(userInfo._id)) {
                 setIsSubscribed(true);
             } else {
                 setIsSubscribed(false);
             }
 
+            // Price drop subscription status check
             if (userInfo && data.priceDropSubscribers && data.priceDropSubscribers.includes(userInfo._id)) {
                 setIsPriceSubscribed(true);
             } else {
                 setIsPriceSubscribed(false);
             }
+
+            // Check if user has already reviewed this cycle
             if (userInfo && data.reviews) {
-            const userReview = data.reviews.find(
-                (review) => review.user === userInfo._id
-            );
-            if (userReview) {
-                setRating(userReview.rating);
-                setComment(userReview.comment);
-                setHasReviewed(true);
-            } else {
-                
-                setRating(0);
-                setComment('');
-                setHasReviewed(false);
+                const userReview = data.reviews.find(
+                    (review) => review.user === userInfo._id
+                );
+                if (userReview) {
+                    setRating(userReview.rating);
+                    setComment(userReview.comment);
+                    setHasReviewed(true);
+                } else {
+                    setRating(0);
+                    setComment('');
+                    setHasReviewed(false);
+                }
             }
-        }
             setLoading(false);
         } catch (err) {
             setError(err.message || 'Error loading cycle details.');
             setLoading(false);
             console.error(err);
         }
-    }, [id, userInfo]); 
+    }, [id, userInfo]);
+
     useEffect(() => {
         fetchCycle();
     }, [fetchCycle]);
 
-    
+    // Effect to update price and stock when color or size variants change
     useEffect(() => {
-        
-        console.log(`Comparing: Color='${selectedColor}', Size='${selectedSize}'`);
+        // console.log(`Comparing: Color='${selectedColor}', Size='${selectedSize}'`);
 
         if (cycle && cycle.variants && cycle.variants.length > 0) {
             const chosenVariant = cycle.variants.find(
-                (v) => 
-                    v.color.trim().toLowerCase() === selectedColor.trim().toLowerCase() && 
+                (v) =>
+                    v.color.trim().toLowerCase() === selectedColor.trim().toLowerCase() &&
                     v.size.trim().toLowerCase() === selectedSize.trim().toLowerCase()
             );
 
             if (chosenVariant) {
-                console.log('Variant FOUND:', chosenVariant);
+                // console.log('Variant FOUND:', chosenVariant);
                 setCurrentDisplayedPrice(cycle.ourPrice + (chosenVariant.additionalPrice || 0));
                 setCurrentDisplayedStock(chosenVariant.variantStock);
                 setSelectedVariantId(chosenVariant._id);
             } else {
-                console.log('Variant NOT found.');
-               
+                // console.log('Variant NOT found, resetting to base price/stock.');
+                // If variant not found, fall back to base product price/stock (or 0 stock)
                 setCurrentDisplayedPrice(cycle.ourPrice);
-                setCurrentDisplayedStock(0);
+                setCurrentDisplayedStock(0); // Or cycle.stock if you have a base stock without variants
                 setSelectedVariantId(null);
             }
         }
     }, [selectedColor, selectedSize, cycle]);
-         useEffect(() => {
+
+    // Effect to update available sizes when color changes
+    useEffect(() => {
         if (cycle && cycle.variants) {
-            
             const availableSizes = cycle.variants
-                .filter(v => v.color.trim() === selectedColor.trim())
+                .filter(v => v.color.trim().toLowerCase() === selectedColor.trim().toLowerCase())
                 .map(v => v.size);
 
-            
             if (availableSizes.length > 0) {
-                
+                // Set the selected size to the first available size for the chosen color
+                // This ensures a valid size is always selected for the chosen color
                 setSelectedSize(availableSizes[0]);
+            } else {
+                // If no sizes for the selected color, clear selected size
+                setSelectedSize('');
             }
         }
-    }, [selectedColor, cycle]); 
+    }, [selectedColor, cycle]);
 
 
     const addToCartHandler = () => {
-        
-        if (currentDisplayedStock > 0) { 
+        if (currentDisplayedStock > 0) {
             console.log('Add to Cart button clicked!');
             addToCart(cycle._id, 1, selectedVariantId);
         } else {
@@ -156,7 +164,6 @@ function CycleDetailsPage() {
     };
 
     const checkDeliveryDateHandler = async () => {
-       
         if (!/^\d{6}$/.test(pincode)) {
             setDeliveryError('Please enter a valid 6-digit pincode.');
             setEstimatedDate('');
@@ -168,7 +175,6 @@ function CycleDetailsPage() {
         setEstimatedDate('');
 
         try {
-            
             const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/delivery/estimate`, {
                 method: 'POST',
                 headers: {
@@ -179,11 +185,8 @@ function CycleDetailsPage() {
 
             const data = await res.json();
             if (!res.ok) {
-                
                 throw new Error(data.message || 'Could not fetch delivery date.');
             }
-            
-            
             setEstimatedDate(data.estimatedDate);
 
         } catch (err) {
@@ -192,6 +195,7 @@ function CycleDetailsPage() {
             setDeliveryLoading(false);
         }
     };
+
     const wishlistHandler = async () => {
         if (!userInfo) {
             alert('Please login to add items to your wishlist');
@@ -209,7 +213,6 @@ function CycleDetailsPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
 
-            
             setInWishlist(!inWishlist);
             updateWishlist(data.wishlist);
 
@@ -238,12 +241,13 @@ function CycleDetailsPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
 
-            setIsSubscribed(!isSubscribed); 
+            setIsSubscribed(!isSubscribed);
             alert(successMessage);
         } catch (error) {
             alert(`Error: ${error.message}`);
         }
     };
+
     const priceDropSubscribeHandler = async () => {
         if (!userInfo) {
             alert('Please login to subscribe to price drop alerts');
@@ -263,12 +267,13 @@ function CycleDetailsPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Action failed');
 
-            setIsPriceSubscribed(!isPriceSubscribed); 
+            setIsPriceSubscribed(!isPriceSubscribed);
             alert(successMessage);
         } catch (error) {
             alert(`Error: ${error.message}`);
         }
     };
+
     const submitReviewHandler = async (e) => {
         e.preventDefault();
         try {
@@ -284,13 +289,14 @@ function CycleDetailsPage() {
             if (!res.ok) {
                 throw new Error(data.message || 'Failed to submit review');
             }
-            alert(data.message); 
-            setHasReviewed(true); 
-            fetchCycle(); 
+            alert(data.message);
+            setHasReviewed(true);
+            fetchCycle();
         } catch (err) {
             setReviewError(err.message);
         }
     };
+
     if (loading) {
         return <h2>Loading...</h2>;
     }
@@ -312,39 +318,40 @@ function CycleDetailsPage() {
                 <Col md={6}>
                     <Image src={cycle.imageUrl} alt={cycle.model} fluid />
                 </Col>
-                <Col md={3}> 
+                <Col md={3}>
                     <ListGroup variant='flush'>
                         <ListGroup.Item>
                             <h3>{cycle.brand} {cycle.model}</h3>
                         </ListGroup.Item>
                         <ListGroup.Item>
-    <div className="price-section">
-        {/* Hamara Selling Price, bade size mein */}
-        <h3 className="mb-0" style={{ fontSize: '2rem' }}>
-            ₹{cycle.ourPrice}
-        </h3>
+                            <div className="price-section">
+                                {/* Our Selling Price, bade size mein (ab yeh currentDisplayedPrice se aayega) */}
+                                <h3 className="mb-0" style={{ fontSize: '2rem' }}>
+                                    ₹{currentDisplayedPrice.toFixed(2)}
+                                </h3>
 
-        {/* Market Price (MRP), kata hua */}
-        <span className="text-muted">
-            M.R.P.: <del>₹{cycle.marketPrice}</del>
-        </span>
-        
-        {/* Discount, agar hai toh */}
-        {cycle.marketPrice > cycle.ourPrice && (
-            <span className="ms-2 badge bg-success">
-                {Math.round(((cycle.marketPrice - cycle.ourPrice) / cycle.marketPrice) * 100)}% OFF
-            </span>
-        )}
-    </div>
-</ListGroup.Item>
-                        
+                                {/* Market Price (MRP), kata hua */}
+                                {cycle.marketPrice > 0 && ( // Only show if marketPrice is greater than 0
+                                    <span className="text-muted me-2">
+                                        M.R.P.: <del>₹{cycle.marketPrice.toFixed(2)}</del>
+                                    </span>
+                                )}
+
+                                {/* Discount, agar hai toh (ab currentDisplayedPrice ke hisaab se) */}
+                                {cycle.marketPrice > currentDisplayedPrice && cycle.marketPrice > 0 && (
+                                    <span className="ms-2 badge bg-success">
+                                        {Math.round(((cycle.marketPrice - currentDisplayedPrice) / cycle.marketPrice) * 100)}% OFF
+                                    </span>
+                                )}
+                            </div>
+                        </ListGroup.Item>
+
                         <ListGroup.Item>
                             Description: {cycle.description}
                         </ListGroup.Item>
-                        
+
                         {cycle.variants && cycle.variants.length > 0 && (
                             <>
-                                
                                 <ListGroup.Item>
                                     <Row className="align-items-center">
                                         <Col>Color:</Col>
@@ -354,7 +361,7 @@ function CycleDetailsPage() {
                                                 value={selectedColor}
                                                 onChange={(e) => setSelectedColor(e.target.value)}
                                             >
-                                                
+                                                {/* Unique colors for dropdown */}
                                                 {[...new Set(cycle.variants.map(v => v.color))].map(
                                                     (colorOption) => (
                                                         <option key={colorOption} value={colorOption}>
@@ -367,7 +374,7 @@ function CycleDetailsPage() {
                                     </Row>
                                 </ListGroup.Item>
 
-                                
+
                                 <ListGroup.Item>
                                     <Row className="align-items-center">
                                         <Col>Size:</Col>
@@ -377,9 +384,9 @@ function CycleDetailsPage() {
                                                 value={selectedSize}
                                                 onChange={(e) => setSelectedSize(e.target.value)}
                                             >
-                                                
+                                                {/* Sizes filtered by selected color */}
                                                 {cycle.variants
-                                                    .filter(v => v.color === selectedColor)
+                                                    .filter(v => v.color.trim().toLowerCase() === selectedColor.trim().toLowerCase())
                                                     .map((sizeOption) => (
                                                         <option key={sizeOption.size} value={sizeOption.size}>
                                                             {sizeOption.size}
@@ -391,23 +398,22 @@ function CycleDetailsPage() {
                                 </ListGroup.Item>
                             </>
                         )}
-                        
+
                     </ListGroup>
                 </Col>
-                <Col md={3}> 
+                <Col md={3}>
                     <Card>
                         <ListGroup variant='flush'>
-                            
                             <ListGroup.Item>
                                 <Row className="align-items-center mb-2">
-                                    <Col xs={5}>Price:</Col> 
-                                    <Col xs={7} className="text-end text-nowrap"> 
+                                    <Col xs={5}>Price:</Col>
+                                    <Col xs={7} className="text-end text-nowrap">
                                         <strong>₹{currentDisplayedPrice.toFixed(2)}</strong>
                                     </Col>
                                 </Row>
                                 <Row className="align-items-center">
-                                    <Col xs={5}>Status:</Col> 
-                                    <Col xs={7} className="text-end text-nowrap"> 
+                                    <Col xs={5}>Status:</Col>
+                                    <Col xs={7} className="text-end text-nowrap">
                                         {currentDisplayedStock > 0 ? 'In Stock' : 'Out Of Stock'}
                                     </Col>
                                 </Row>
@@ -430,7 +436,7 @@ function CycleDetailsPage() {
                                 {estimatedDate && <small className="text-success d-block mt-1">Estimated delivery: <b>{estimatedDate}</b></small>}
                             </ListGroup.Item>
 
-                            <ListGroup.Item className="d-grid gap-2"> 
+                            <ListGroup.Item className="d-grid gap-2">
                                 {currentDisplayedStock > 0 ? (
                                     <Button onClick={addToCartHandler} variant="primary" type='button'>
                                         Add To Cart
@@ -461,7 +467,7 @@ function CycleDetailsPage() {
                     </Card>
                 </Col>
             </Row>
-            
+
             <Row className="mt-5">
 
                 <Col md={6}>

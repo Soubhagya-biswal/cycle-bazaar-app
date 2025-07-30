@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Row, Col, Spinner, Alert,Container } from 'react-bootstrap';
+import { Table, Button, Row, Col, Spinner, Alert, Container } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext'; // To get userInfo and token
@@ -118,7 +118,8 @@ function SellerProductListPage() {
                             <th>ID</th>
                             <th>BRAND</th>
                             <th>MODEL</th>
-                            <th>PRICE</th>
+                            <th>MARKET PRICE</th> {/* Added new column for Market Price */}
+                            <th>OUR PRICE</th>     {/* Changed label for clarity */}
                             <th>STOCK</th>
                             <th>ACTIONS</th>
                         </tr>
@@ -129,7 +130,10 @@ function SellerProductListPage() {
                                 <td>{product._id}</td>
                                 <td>{product.brand}</td>
                                 <td>{product.model}</td>
-                                <td>₹{product.price.toFixed(2)}</td>
+                                {/* Safe display for Market Price */}
+                                <td>₹{(product.marketPrice || 0).toFixed(2)}</td>
+                                {/* Safe display for Our Price (formerly 'price') */}
+                                <td>₹{(product.ourPrice || 0).toFixed(2)}</td>
                                 <td>{product.stock}</td>
                                 <td>
                                     <LinkContainer to={`/seller/product/${product._id}/edit`}>
