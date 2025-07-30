@@ -304,16 +304,16 @@ function OrderPage() {
                             <p><strong>Email: </strong> <a href={`mailto:${order.user.email}`}>{order.user.email}</a></p>
                                     <p><strong>Address: </strong>{order.shippingAddress.address}, {order.shippingAddress.city}{' '}{order.shippingAddress.postalCode}, {order.shippingAddress.country}
                                     </p>
-                                    {!order.isDelivered && order.estimatedDeliveryDate && (
-                                <Alert variant='info' className="mt-3">
-                                   Estimated Delivery By: <strong>{new Date(order.estimatedDeliveryDate).toLocaleDateString('en-IN', {
-                                        weekday: 'long',
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    })}</strong>
-                                </Alert>
-                            )}
+                                    {!order.isDelivered && order.estimatedDeliveryDate && order.status !== 'Cancelled' && order.status !== 'Refund Processed' && (
+    <Alert variant='info' className="mt-3">
+        Estimated Delivery By: <strong>{new Date(order.estimatedDeliveryDate).toLocaleDateString('en-IN', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        })}</strong>
+    </Alert>
+)}
                             <Alert variant={
                                 order.status === 'Delivered' || order.status === 'Refund Processed' ? 'success' : 
                                 order.status === 'Cancelled' || order.status === 'Return Rejected' ? 'danger' : 

@@ -210,7 +210,8 @@ const getSellerOrders = asyncHandler(async (req, res) => {
 
     console.log(`Seller-specific orders found after filtering: ${sellerSpecificOrders.length}`);
     res.json(sellerSpecificOrders);
-});const updateOrderStatus = asyncHandler(async (req, res) => {
+});
+const updateOrderStatus = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   const { status } = req.body;
 
@@ -227,7 +228,47 @@ const getSellerOrders = asyncHandler(async (req, res) => {
       const returnDeadlineDate = new Date(order.deliveredAt); 
       returnDeadlineDate.setDate(returnDeadlineDate.getDate() + returnWindowDays);
       order.returnDeadline = returnDeadlineDate; 
-      
+      if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
+            order.cancellationDetails = {
+                reason: 'Order Cancelled by Admin',
+                status: 'Approved',
+                cancelledBy: 'Admin'
+            };
+            let emailMessage = '';
+            let emailSubject = `Your Order #${order._id} has been Cancelled by the Admin`;
+
+            if (order.paymentMethod === 'Razorpay' && order.isPaid) {
+                try {
+                    const paymentId = order.paymentResult.id;
+                    if (!paymentId) throw new Error('Payment ID not found for this order.');
+                    
+                    const refund = await razorpayInstance.payments.refund(paymentId, {
+                        amount: Math.round(order.totalPrice * 100),
+                        speed: 'normal',
+                    });
+
+                    order.isRefunded = true;
+                    order.refundedAt = Date.now();
+                    order.status = 'Refund Processed';
+                    order.refundResult = { id: refund.id, status: refund.status, update_time: new Date().toISOString() };
+
+                    emailMessage = `<p>Hi ${order.user.name},</p><p>Your order #${order._id} has been cancelled by our team.</p><p>A refund of <b>₹${order.totalPrice}</b> has been processed. It may take 5-10 business days to appear in your account.</p><p>Refund ID: ${refund.id}</p>`;
+                    console.log('Razorpay refund successful (Admin Cancel):', refund.id);
+
+                } catch (refundError) {
+                    console.error('Razorpay refund failed (Admin Cancel):', refundError);
+                    emailMessage = `<p>Hi ${order.user.name},</p><p>Your order #${order._id} has been cancelled, but there was an issue processing your automated refund. Please contact support.</p>`;
+                }
+            } else { 
+                emailMessage = `<p>Hi ${order.user.name},</p><p>Your order #${order._id} has been cancelled by our team.</p><p>Since this was a Cash on Delivery order, no refund is necessary.</p>`;
+            }
+
+            try {
+                await sendEmail({ email: order.user.email, subject: emailSubject, message: emailMessage });
+            } catch (emailError) {
+                console.error("Failed to send admin cancellation email:", emailError);
+            }
+        }
     } else {
       order.isDelivered = false;
       order.deliveredAt = undefined;
@@ -347,10 +388,11 @@ const requestOrderCancellation = asyncHandler(async (req, res) => {
 
     order.status = 'Cancellation Requested';
     order.cancellationDetails = {
-      reason: reason,
-      status: 'Pending',
-      requestedAt: Date.now(),
-    };
+    reason: reason,
+    status: 'Pending',
+    requestedAt: Date.now(),
+    cancelledBy: 'User' 
+};
 
     const updatedOrder = await order.save();
 
@@ -363,7 +405,7 @@ const requestOrderCancellation = asyncHandler(async (req, res) => {
   }
 });
 const manageCancellationRequest = asyncHandler(async (req, res) => {
-    const { action } = req.body; 
+    const { action } = req.body;
     const order = await Order.findById(req.params.id).populate('user', 'name email');
 
     if (order && order.status === 'Cancellation Requested') {
@@ -371,78 +413,50 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
         let emailSubject = '';
 
         if (action === 'approve') {
-    order.status = 'Cancelled';
-    order.cancellationDetails.status = 'Approved';
-    emailSubject = `Your Order #${order._id} Cancellation has been Approved`;
+            order.status = 'Cancelled';
+            order.cancellationDetails.status = 'Approved';
+            order.cancellationDetails.cancelledBy = 'User'; // User ne cancel kiya hai
+            emailSubject = `Your Order #${order._id} Cancellation has been Approved`;
 
-    // Yahan hum check karenge ki payment Razorpay se hai ya COD
-    if (order.paymentMethod === 'Razorpay' && order.isPaid) {
-        try {
-            const paymentId = order.paymentResult.id;
-            if (!paymentId) {
-                throw new Error('Payment ID not found for this order.');
+            if (order.paymentMethod === 'Razorpay' && order.isPaid) {
+                try {
+                    const paymentId = order.paymentResult.id;
+                    if (!paymentId) throw new Error('Payment ID not found for this order.');
+
+                    const refund = await razorpayInstance.payments.refund(paymentId, {
+                        amount: Math.round(order.totalPrice * 100),
+                        speed: 'normal',
+                    });
+
+                    order.isRefunded = true;
+                    order.refundedAt = Date.now();
+                    order.status = 'Refund Processed';
+                    order.refundResult = { id: refund.id, status: refund.status, update_time: new Date().toISOString() };
+                    
+                    emailMessage = `<p>Hi ${order.user.name},</p><p>Your cancellation request for order #${order._id} has been approved.</p><p>A refund of <b>₹${order.totalPrice}</b> has been processed via Razorpay. It may take 5-10 business days to appear in your account.</p><p>Refund ID: ${refund.id}</p>`;
+                    console.log('Razorpay refund successful:', refund.id);
+
+                } catch (refundError) {
+                    console.error('Razorpay refund failed:', refundError);
+                    emailMessage = `<p>Hi ${order.user.name},</p><p>Your cancellation for order #${order._id} is approved, but there was an issue processing your automated refund. Please contact support.</p>`;
+                }
+            } else { // Agar COD hai
+                emailMessage = `<p>Hi ${order.user.name},</p><p>Your cancellation request for order #${order._id} has been approved.</p><p>Since this was a Cash on Delivery order, no refund is necessary.</p>`;
             }
-
-            // Razorpay se refund start karenge
-            const refund = await razorpayInstance.payments.refund(paymentId, {
-                amount: Math.round(order.totalPrice * 100), // Amount in paise
-                speed: 'normal',
-            });
-
-            // Refund ki details save karenge
-            order.isRefunded = true;
-            order.refundedAt = Date.now();
-            order.status = 'Refund Processed'; // Status bhi update kar dete hain
-            order.refundResult = {
-                id: refund.id,
-                status: refund.status,
-                update_time: new Date().toISOString()
-            };
-            
-            emailMessage = `
-                <p>Hi ${order.user.name},</p>
-                <p>Your cancellation request for order #${order._id} has been approved.</p>
-                <p>A refund of <b>₹${order.totalPrice}</b> has been processed via Razorpay. It may take 5-10 business days to appear in your account.</p>
-                <p>Refund ID: ${refund.id}</p>
-                <p>We are sorry to see you go.</p>
-            `;
-            console.log('Razorpay refund successful:', refund.id);
-
-        } catch (refundError) {
-            console.error('Razorpay refund failed:', refundError);
-            emailMessage = `<p>Hi ${order.user.name},</p><p>Your cancellation for order #${order._id} is approved, but there was an issue processing your automated refund. Please contact support.</p>`;
-        }
-    } else { // Agar COD ya koi aur method hai
-        emailMessage = `
-            <p>Hi ${order.user.name},</p>
-            <p>Your cancellation request for order #${order._id} has been approved.</p>
-            <p>Since this was a Cash on Delivery order, no refund is necessary.</p>
-        `;
-    }
-
         } else if (action === 'reject') {
-            order.status = 'Processing'; 
+            order.status = 'Processing';
             order.cancellationDetails.status = 'Rejected';
             emailSubject = `Your Order #${order._id} Cancellation has been Rejected`;
-            emailMessage = `
-                <p>Hi ${order.user.name},</p>
-                <p>We're sorry, but your cancellation request for order #${order._id} has been rejected.</p>
-                <p>This is likely because the item has already been prepared for shipment. Please contact support for more details.</p>
-            `;
+            emailMessage = `<p>Hi ${order.user.name},</p><p>We're sorry, but your cancellation request for order #${order._id} has been rejected because the item may have already been shipped.</p>`;
         } else {
             res.status(400);
-            throw new Error("Invalid action. Action 'approve' ya 'reject' honi chahiye.");
+            throw new Error("Invalid action.");
         }
 
         const updatedOrder = await order.save();
 
-       
         try {
-            await sendEmail({
-                email: order.user.email,
-                subject: emailSubject,
-                message: emailMessage
-            });
+            await sendEmail({ email: order.user.email, subject: emailSubject, message: emailMessage });
         } catch (emailError) {
             console.error("Failed to send cancellation status email:", emailError);
         }

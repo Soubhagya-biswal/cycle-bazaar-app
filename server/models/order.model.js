@@ -81,10 +81,14 @@ const orderSchema = new mongoose.Schema(
       type: Date,
     },
     cancellationDetails: {
-      reason: { type: String },
-      status: { type: String, enum: ['Pending', 'Approved', 'Rejected'] },
-      requestedAt: { type: Date },
-    },
+    reason: { type: String },
+    status: { type: String, enum: ['Pending', 'Approved', 'Rejected'] },
+    requestedAt: { type: Date },
+    cancelledBy: { 
+        type: String,
+        enum: ['User', 'Admin']
+    }
+},
        refundResult: {
        id: { type: String }, 
        status: { type: String }, 
