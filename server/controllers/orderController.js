@@ -3,12 +3,11 @@ import Order from '../models/order.model.js';
 import User from '../models/user.model.js';
 import sendEmail from '../utils/sendEmail.js';
 import { calculateEstimatedDelivery } from '../utils/deliveryEstimator.js';
-import Razorpay from 'razorpay'; // Stripe ki jagah Razorpay
-import crypto from 'crypto';     // Payment verify karne ke liye
+import logActivity from '../services/logActivity.js';
+import Razorpay from 'razorpay'; 
+import crypto from 'crypto';     
 
-// @desc    Add new order
-// @route   POST /api/orders
-// @access  Private
+
 const addOrderItems = asyncHandler(async (req, res) => {
     const {
         orderItems,
@@ -43,12 +42,12 @@ const addOrderItems = asyncHandler(async (req, res) => {
         });
 
         const createdOrder = await order.save();
+        logActivity(req.user._id, 'PLACE_ORDER', { orderId: createdOrder._id, total: createdOrder.totalPrice });
         res.status(201).json(createdOrder);
     }
 });
 
-// @desc    Create Razorpay Order
-// @route   GET /api/orders/:id/razorpay
+
 const createRazorpayOrder = asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id);
 
@@ -59,7 +58,7 @@ const createRazorpayOrder = asyncHandler(async (req, res) => {
         });
 
         const options = {
-            amount: Math.round(order.totalPrice * 100), // Amount in paise
+            amount: Math.round(order.totalPrice * 100), 
             currency: "INR",
             receipt: order._id.toString(),
         };
@@ -74,8 +73,7 @@ const createRazorpayOrder = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Verify Razorpay Payment and Update Order
-// @route   POST /api/orders/verify-payment
+
 const verifyPayment = asyncHandler(async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
 
@@ -105,7 +103,7 @@ const verifyPayment = asyncHandler(async (req, res) => {
 });
 
 
-// --- Baaki ke saare functions waise hi hain ---
+
 
 const getOrderById = asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id).populate('user', 'name email');
@@ -151,39 +149,38 @@ const getSellerOrders = asyncHandler(async (req, res) => {
     const sellerId = req.user._id;
     console.log(`Fetching orders for seller ID: ${sellerId}`);
 
-    // --- NAYA POPULATE LOGIC YAHAN ---
+    
     const orders = await Order.find({})
         .populate({
-            // Path to the array element. We explicitly populate the 'cycle' field within each orderItem.
+            
             path: 'orderItems.cycle',
-            // Specify the model to reference
+            
             model: 'Cycle',
-            // Select the fields you need from the Cycle document
-            // Crucially, 'seller' is part of the Cycle model and needs to be brought in
+            
             select: 'brand model price seller imageUrl',
-            // Now, populate the 'seller' field *inside* the 'cycle' object that we just got
+            
             populate: {
-                path: 'seller', // This 'seller' refers to the seller field within the Cycle model
-                model: 'User', // Specify the model for the seller (which is a User)
-                select: 'name' // Select the 'name' field from the User model
+                path: 'seller', 
+                model: 'User', 
+                select: 'name' 
             }
         })
-        .populate('user', 'name email'); // This populates the user who made the order
+        .populate('user', 'name email'); 
 
     console.log(`Total orders fetched from DB (before filtering): ${orders.length}`);
 
-    // --- NAYA CONSOLE.LOG YAHAN - Poora populated order object dekho ---
+    
     if (orders.length > 0) {
         console.log('--- Debug: First Populated Order Sample ---');
-        // JSON.stringify will show populated objects
+     
         console.log(JSON.stringify(orders[0].toObject({ getters: true, virtuals: true }), null, 2));
         console.log('-----------------------------------------');
     }
-    // --- END NAYA CONSOLE.LOG ---
+   
 
 
     const sellerSpecificOrders = orders.map(order => {
-        // Only consider orders that are delivered and paid
+        
         if (!order.isDelivered || !order.isPaid) {
             console.log(`Skipping order ${order._id}: Not Delivered or Not Paid`);
             return null;
@@ -195,8 +192,7 @@ const getSellerOrders = asyncHandler(async (req, res) => {
             console.log(`    Item Seller Object (Populated?): ${item.cycle?.seller ? 'Exists' : 'NULL'}, Type: ${typeof item.cycle?.seller}`);
             console.log(`    Item Seller ID: ${item.cycle?.seller?._id}, My Seller ID: ${sellerId.toString()}`);
 
-            // Crucial check: Does the item's cycle belong to the logged-in seller?
-            // Ensure item.cycle is an object and item.cycle.seller is also an object
+            
             return item.cycle && typeof item.cycle === 'object' &&
                    item.cycle.seller && typeof item.cycle.seller === 'object' &&
                    item.cycle.seller._id.toString() === sellerId.toString();
@@ -241,7 +237,7 @@ const getSellerOrders = asyncHandler(async (req, res) => {
 
     const updatedOrder = await order.save();
 
-    // --- Invoice Email Logic (only send if status changed to Delivered) ---
+    
     if (status === 'Delivered' && oldStatus !== 'Delivered') {
         const finalOrder = await Order.findById(updatedOrder._id).populate('user', 'name email');
 
@@ -342,9 +338,9 @@ const requestOrderCancellation = asyncHandler(async (req, res) => {
   const { reason } = req.body;
   const order = await Order.findById(req.params.id);
 
-  // Check if the order exists and belongs to the user
+  
   if (order && order.user.toString() === req.user._id.toString()) {
-    // Check if the order is in a state that can be cancelled
+    
     if (order.status !== 'Processing') {
       res.status(400);
       throw new Error('Order cannot be cancelled once it has been shipped.');
@@ -428,7 +424,7 @@ const manageCancellationRequest = asyncHandler(async (req, res) => {
 
         const updatedOrder = await order.save();
 
-        // User ko final email bhejo
+       
         try {
             await sendEmail({
                 email: order.user.email,
@@ -457,6 +453,6 @@ export {
     requestOrderCancellation, 
     manageCancellationRequest, 
     getSellerOrders,
-    createRazorpayOrder, // Naya Razorpay function
-    verifyPayment      // Naya Razorpay function
+    createRazorpayOrder, 
+    verifyPayment      
 };
