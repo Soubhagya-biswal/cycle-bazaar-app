@@ -1,12 +1,10 @@
-import asyncHandler from 'express-async-handler'; // Import asyncHandler for error handling
+import asyncHandler from 'express-async-handler'; 
 import Cycle from '../models/cycle.model.js';
 import Order from '../models/order.model.js';
 import User from '../models/user.model.js';
 import sendEmail from '../utils/sendEmail.js';
+import logActivity from '../services/logActivity.js';
 
-// @desc    Get all cycles with pagination
-// @route   GET /cycles
-// @access  Public
 const getAllCycles = asyncHandler(async (req, res) => {
     const pageSize = 8;
     const page = Number(req.query.pageNumber) || 1;
@@ -41,7 +39,7 @@ const addCycle = asyncHandler(async (req, res) => {
         imageUrl,
         description,
         stock: Number(stock),
-        seller: req.user._id, // YEH LINE ZAROORI HAI
+        seller: req.user._id, 
         rating: 0,
         numReviews: 0,
     });
@@ -70,7 +68,7 @@ const updateCycle = asyncHandler(async (req, res) => {
 
     if (cycle) {
         const oldStock = cycle.stock;
-        const oldPrice = cycle.price; // Purana price save kar lo
+        const oldPrice = cycle.price; 
         const newPrice = Number(price);
 
         cycle.brand = brand || cycle.brand;
@@ -82,11 +80,9 @@ const updateCycle = asyncHandler(async (req, res) => {
 
         const updatedCycle = await cycle.save();
 
-        // NAYA EMAIL NOTIFICATION LOGIC
-        // Check karo ki stock 0 se zyada hua hai aur subscribers hain ya nahi
+        
         if (oldStock === 0 && updatedCycle.stock > 0 && updatedCycle.subscribers.length > 0) {
             
-            // Subscribers ki details (email) fetch karo
             await updatedCycle.populate('subscribers', 'email name');
 
             const emailList = updatedCycle.subscribers.map(user => user.email);
@@ -98,7 +94,7 @@ const updateCycle = asyncHandler(async (req, res) => {
                 <p>Hurry, stock is limited!</p>
             `;
 
-            // Sabko ek-ek karke email bhejo
+            
             for (const user of updatedCycle.subscribers) {
                 try {
                     await sendEmail({
@@ -165,7 +161,7 @@ const subscribeToStockNotification = asyncHandler(async (req, res) => {
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
-        // Check karo ki user pehle se subscribed hai ya nahi
+        
         const isSubscribed = cycle.subscribers.some(sub => sub.toString() === req.user._id.toString());
 
         if (isSubscribed) {
@@ -185,7 +181,7 @@ const unsubscribeFromStockNotification = asyncHandler(async (req, res) => {
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
-        // User ki ID ko subscribers list se filter karke hata do
+        
         cycle.subscribers = cycle.subscribers.filter(
             (sub) => sub.toString() !== req.user._id.toString()
         );
@@ -233,7 +229,7 @@ const createCycleReview = asyncHandler(async (req, res) => {
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
-        // Check if user has purchased the item
+        
         const deliveredOrders = await Order.find({
             user: req.user._id,
             'orderItems.cycle': cycle._id,
@@ -250,11 +246,12 @@ const createCycleReview = asyncHandler(async (req, res) => {
         );
 
         if (alreadyReviewed) {
-            // Agar review pehle se hai, to use UPDATE karo
+            
             alreadyReviewed.rating = Number(rating);
             alreadyReviewed.comment = comment;
+            logActivity(req.user._id, 'UPDATE_REVIEW', { cycleId: cycle._id, rating });
         } else {
-            // Agar review nahi hai, to naya BANAO
+            
             const review = {
                 name: req.user.name,
                 rating: Number(rating),
@@ -263,16 +260,17 @@ const createCycleReview = asyncHandler(async (req, res) => {
             };
             cycle.reviews.push(review);
             cycle.numReviews = cycle.reviews.length;
+            logActivity(req.user._id, 'CREATE_REVIEW', { cycleId: cycle._id, rating });
         }
 
-        // Dono cases (update ya naya) mein overall rating dobara calculate karo
+        
         cycle.rating =
             cycle.reviews.reduce((acc, item) => item.rating + acc, 0) /
             cycle.reviews.length;
 
         await cycle.save();
         
-        // Update hua ya naya bana, uske hisaab se message bhejo
+        
         res.status(201).json({ message: alreadyReviewed ? 'Review updated successfully' : 'Review added successfully' });
 
     } else {
@@ -291,10 +289,10 @@ const deleteReview = asyncHandler(async (req, res) => {
             throw new Error('Review not found');
         }
 
-        // Remove the review from the array
+        
         cycle.reviews = cycle.reviews.filter(r => r._id.toString() !== req.params.reviewId);
 
-        // Recalculate rating
+        
         cycle.numReviews = cycle.reviews.length;
         if (cycle.reviews.length > 0) {
             cycle.rating = cycle.reviews.reduce((acc, item) => item.rating + acc, 0) / cycle.reviews.length;

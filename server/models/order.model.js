@@ -48,7 +48,7 @@ const orderSchema = new mongoose.Schema(
     isDelivered: { type: Boolean, required: true, default: false },
     deliveredAt: { type: Date },
 
-    // --- NAYE FIELDS CANCELLATION KE LIYE ---
+    
     status: {
   type: String,
   required: true,
@@ -65,7 +65,13 @@ const orderSchema = new mongoose.Schema(
     'Return Rejected',      
     'Refund Processed'    
   ],
-},
+    },
+    statusHistory: [
+  {
+    status: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
+  }
+],
     isRefunded: {
       type: Boolean,
       required: true,
