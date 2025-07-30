@@ -39,7 +39,7 @@ function CycleDetailsPage() {
 
             setCycle(data);
             
-            setCurrentDisplayedPrice(data.price);
+            setCurrentDisplayedPrice(data.ourPrice);
             setCurrentDisplayedStock(data.stock);
 
             
@@ -50,7 +50,7 @@ function CycleDetailsPage() {
                 
                 setSelectedVariantId(data.variants[0]._id);
                 
-                setCurrentDisplayedPrice(data.price + (data.variants[0].additionalPrice || 0));
+                setCurrentDisplayedPrice(data.ourPrice + (data.variants[0].additionalPrice || 0));
                 setCurrentDisplayedStock(data.variants[0].variantStock);
             } else {
                 
@@ -117,13 +117,13 @@ function CycleDetailsPage() {
 
             if (chosenVariant) {
                 console.log('Variant FOUND:', chosenVariant);
-                setCurrentDisplayedPrice(cycle.price + (chosenVariant.additionalPrice || 0));
+                setCurrentDisplayedPrice(cycle.ourPrice + (chosenVariant.additionalPrice || 0));
                 setCurrentDisplayedStock(chosenVariant.variantStock);
                 setSelectedVariantId(chosenVariant._id);
             } else {
                 console.log('Variant NOT found.');
                
-                setCurrentDisplayedPrice(cycle.price);
+                setCurrentDisplayedPrice(cycle.ourPrice);
                 setCurrentDisplayedStock(0);
                 setSelectedVariantId(null);
             }
@@ -318,8 +318,25 @@ function CycleDetailsPage() {
                             <h3>{cycle.brand} {cycle.model}</h3>
                         </ListGroup.Item>
                         <ListGroup.Item>
-                            Price: ₹{cycle.price}
-                        </ListGroup.Item>
+    <div className="price-section">
+        {/* Hamara Selling Price, bade size mein */}
+        <h3 className="mb-0" style={{ fontSize: '2rem' }}>
+            ₹{cycle.ourPrice}
+        </h3>
+
+        {/* Market Price (MRP), kata hua */}
+        <span className="text-muted">
+            M.R.P.: <del>₹{cycle.marketPrice}</del>
+        </span>
+        
+        {/* Discount, agar hai toh */}
+        {cycle.marketPrice > cycle.ourPrice && (
+            <span className="ms-2 badge bg-success">
+                {Math.round(((cycle.marketPrice - cycle.ourPrice) / cycle.marketPrice) * 100)}% OFF
+            </span>
+        )}
+    </div>
+</ListGroup.Item>
                         
                         <ListGroup.Item>
                             Description: {cycle.description}
