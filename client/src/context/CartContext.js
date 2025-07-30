@@ -44,7 +44,7 @@ export const CartProvider = ({ children }) => {
     const { subtotal, discount, grandTotal } = useMemo(() => {
         const subtotalCalc = cartItems.reduce((acc, item) => {
             if (!item.cycleId) return acc;
-            const basePrice = item.cycleId.price;
+            const basePrice = item.cycleId.ourPrice;
             const chosenVariant = item.variantId && item.cycleId.variants 
                 ? item.cycleId.variants.find(v => v._id === item.variantId) 
                 : null;
