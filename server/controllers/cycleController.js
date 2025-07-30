@@ -56,8 +56,20 @@ const addCycle = asyncHandler(async (req, res) => {
         rating: 0,
         numReviews: 0,
     });
+     console.log('--- Debug: After creating new Cycle instance (before save) ---');
+    console.log('newCycle.marketPrice:', newCycle.marketPrice);
+    console.log('newCycle.ourPrice:', newCycle.ourPrice);
+    console.log('newCycle.stock:', newCycle.stock);
+    console.log('newCycle.variants:', newCycle.variants);
+    console.log('------------------------------------------------------------');
 
     const createdCycle = await newCycle.save();
+     console.log('--- Debug: After saving to database ---');
+    console.log('createdCycle.marketPrice:', createdCycle.marketPrice);
+    console.log('createdCycle.ourPrice:', createdCycle.ourPrice);
+    console.log('createdCycle.stock:', createdCycle.stock);
+    console.log('createdCycle.variants:', createdCycle.variants);
+    console.log('------------------------------------------------------------');
     console.log('Successfully Saved Cycle Data:', createdCycle); // Dekhne ke liye kya save hua
     console.log('--- Exiting addCycle ---');
     res.status(201).json({ message: 'New Cycle added successfully!', cycle: createdCycle });
@@ -96,7 +108,20 @@ const updateCycle = asyncHandler(async (req, res) => {
         cycle.description = description || cycle.description;
         cycle.stock = Number(stock);
         cycle.variants = variants || [];
+        console.log('--- Debug: Before saving updated Cycle (after assigning new values) ---');
+        console.log('cycle.marketPrice:', cycle.marketPrice);
+        console.log('cycle.ourPrice:', cycle.ourPrice);
+        console.log('cycle.stock:', cycle.stock);
+        console.log('cycle.variants:', cycle.variants);
+        console.log('------------------------------------------------------------');
         const updatedCycle = await cycle.save();
+        console.log('--- Debug: After saving updated Cycle to database ---');
+        console.log('updatedCycle.marketPrice:', updatedCycle.marketPrice);
+        console.log('updatedCycle.ourPrice:', updatedCycle.ourPrice);
+        console.log('updatedCycle.stock:', updatedCycle.stock);
+        console.log('updatedCycle.variants:', updatedCycle.variants);
+        console.log('------------------------------------------------------------');
+        // *** YAHAN TAK ***
         console.log('Successfully Updated Cycle Data:', updatedCycle); 
         console.log('--- Exiting updateCycle ---');
         
