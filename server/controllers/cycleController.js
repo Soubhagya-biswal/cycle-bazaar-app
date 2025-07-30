@@ -29,32 +29,39 @@ const getAdminCycles = asyncHandler(async (req, res) => {
     const cycles = await Cycle.find({}); 
     res.json(cycles);
 });
+// cycleController.js
+
 const addCycle = asyncHandler(async (req, res) => {
-    const { brand, model, marketPrice, ourPrice, imageUrl, description, stock } = req.body;
-         console.log('--- Inside addCycle ---');
-    console.log('Received req.body:', req.body);
-    console.log('Parsed marketPrice:', marketPrice);
-    console.log('Parsed ourPrice:', ourPrice);
+    // req.body se saari values nikal rahe hain
+    const { brand, model, marketPrice, ourPrice, imageUrl, description, stock, variants } = req.body;
+
+    // Optional: Add a console.log here to re-confirm before creating the new Cycle instance
+    console.log('--- Inside addCycle (Final Check) ---');
+    console.log('Received from Frontend:', { brand, model, marketPrice, ourPrice, imageUrl, description, stock, variants });
+
     const newCycle = new Cycle({
         brand,
         model,
-        marketPrice: marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : 0,
-        ourPrice: ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : 0,
-        variants: variants || [], 
+        // *** YAHAN PAR PRICES KO SAFELY PARSE KARO ***
+        // Agar frontend se direct number aa raha hai, to Number() hi کافی ہے.
+        // Lekin agar string ho sakta hai (even from type="number" input), to yeh robust way hai.
+        marketPrice: typeof marketPrice === 'number' ? marketPrice : (marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : 0),
+        ourPrice: typeof ourPrice === 'number' ? ourPrice : (ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : 0),
+        // *** YAHAN TAK ***
+        variants: variants || [], // Ensure variants array is saved. Agar empty hai toh empty array.
         imageUrl,
         description,
-        stock: Number(stock),
+        stock: Number(stock), // Ensure stock is converted to a number
         seller: req.user._id, 
         rating: 0,
         numReviews: 0,
     });
 
     const createdCycle = await newCycle.save();
-    console.log('Saved Cycle Data:', createdCycle); // Dekhne ke liye kya save hua
+    console.log('Successfully Saved Cycle Data:', createdCycle); // Dekhne ke liye kya save hua
     console.log('--- Exiting addCycle ---');
     res.status(201).json({ message: 'New Cycle added successfully!', cycle: createdCycle });
 });
-
 const getCycleById = asyncHandler(async (req, res) => {
   const cycle = await Cycle.findById(req.params.id);
 
@@ -83,14 +90,15 @@ const updateCycle = asyncHandler(async (req, res) => {
 
         cycle.brand = brand || cycle.brand;
         cycle.model = model || cycle.model;
-        cycle.marketPrice = marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : cycle.marketPrice; 
-        cycle.ourPrice = ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : cycle.ourPrice; 
+        cycle.marketPrice = typeof marketPrice === 'number' ? marketPrice : (marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : cycle.marketPrice);
+        cycle.ourPrice = typeof ourPrice === 'number' ? ourPrice : (ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : cycle.ourPrice);
         cycle.imageUrl = imageUrl || cycle.imageUrl;
         cycle.description = description || cycle.description;
         cycle.stock = Number(stock);
         cycle.variants = variants || [];
         const updatedCycle = await cycle.save();
-
+        console.log('Successfully Updated Cycle Data:', updatedCycle); 
+        console.log('--- Exiting updateCycle ---');
         
         if (oldStock === 0 && updatedCycle.stock > 0 && updatedCycle.subscribers.length > 0) {
             
