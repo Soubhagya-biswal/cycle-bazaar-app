@@ -27,48 +27,49 @@ router.get('/', protect, seller, asyncHandler(async (req, res) => {
 }));
 
 router.post('/', protect, seller, asyncHandler(async (req, res) => {
-     console.log('--- Debug: Incoming Request Body for POST /seller/products ---');
+    console.log('--- Debug: Incoming Request Body for POST /seller/products ---');
     console.log(req.body);
     console.log('------------------------------------------------------------');
-    
-    const { brand, model, price, imageUrl, description, variants } = req.body; 
 
-    
-    // Basic validation (NAYA: 'stock' ki jagah 'variants' ki validation)
-if (!brand || !model || !price || !description || !variants || !Array.isArray(variants) || variants.length === 0) {
-    res.status(400);
-    throw new Error('Please provide all required product details: brand, model, price, description, and at least one variant.');
-}
+    // CHANGE 1: Naye fields yahan nikale
+    const { brand, model, marketPrice, ourPrice, stock, imageUrl, description, variants } = req.body;
 
-// Individual variants ke andar ki details ki validation
-for (const variant of variants) {
-    if (!variant.color || !variant.size || variant.additionalPrice === undefined || variant.variantStock === undefined) {
+    // CHANGE 2: Validation mein naye fields check kiye
+    if (!brand || !model || marketPrice === undefined || ourPrice === undefined || stock === undefined || !description) {
         res.status(400);
-        throw new Error('Each variant must have a color, size, additional price, and stock.');
+        throw new Error('Please provide all required product details: brand, model, prices, stock, and description.');
     }
-}
-         const totalStock = variants.reduce((acc, variant) => acc + (variant.variantStock || 0), 0);
 
+    // Individual variants ke andar ki details ki validation (yeh theek hai)
+    if (variants && variants.length > 0) {
+        for (const variant of variants) {
+            if (!variant.color || !variant.size || variant.additionalPrice === undefined || variant.variantStock === undefined) {
+                res.status(400);
+                throw new Error('Each variant must have a color, size, additional price, and stock.');
+            }
+        }
+    }
+    
+    // CHANGE 3: Naye fields use karke naya cycle banaya
     const cycle = new Cycle({
         brand,
         model,
-        price,
-        imageUrl: imageUrl || '/images/sample.jpg', 
+        marketPrice,
+        ourPrice,
+        stock, // Base stock from the form
+        imageUrl: imageUrl || '/images/sample.jpg',
         description,
-        stock:totalStock,
-        seller: req.user._id, 
+        seller: req.user._id,
         numReviews: 0,
         rating: 0,
         reviews: [],
         variants
-        
     });
 
     const createdCycle = await cycle.save();
-    res.status(201).json(createdCycle); 
+    res.status(201).json(createdCycle);
 
 }));
-
 
 router.put('/:id', protect, seller, asyncHandler(async (req, res) => {
     const { brand, model, price, imageUrl, description, variants } = req.body;
