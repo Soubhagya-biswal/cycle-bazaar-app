@@ -85,7 +85,11 @@ const orderSchema = new mongoose.Schema(
       status: { type: String, enum: ['Pending', 'Approved', 'Rejected'] },
       requestedAt: { type: Date },
     },
-
+       refundResult: {
+       id: { type: String }, 
+       status: { type: String }, 
+       update_time: { type: String } 
+   },
 returnInitiated: {
   type: Boolean,
   default: false, 
