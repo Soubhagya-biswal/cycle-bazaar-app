@@ -331,7 +331,13 @@ function OrderPage() {
                                 {order.status === 'Refund Processed' && order.refundedAt && ( 
                                     ` (Processed on ${new Date(order.refundedAt).toLocaleDateString()})`
                                 )}
-                            </Alert>
+                                    </Alert>
+                                    {(order.status === 'Cancelled' || order.status === 'Refund Processed') && order.cancellationDetails && order.cancellationDetails.reason && (
+    <Alert variant="secondary" className="mt-2 small p-2">
+        <strong>Reason:</strong> {order.cancellationDetails.reason}
+        {order.cancellationDetails.cancelledBy && ` (by ${order.cancellationDetails.cancelledBy})`}
+    </Alert>
+)}
                             {order.isRefunded ? (
                                 <Alert variant='info'>Refunded on {new Date(order.refundedAt).toLocaleString()}</Alert>
                             ) : order.isPaid ? (
