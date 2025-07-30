@@ -15,12 +15,12 @@ function AdminDashboard() {
   const [formData, setFormData] = useState({
     brand: '',
     model: '',
-    price: '',
+    marketPrice: '', 
+    ourPrice: '',    
     imageUrl: '',
-    description: '', 
-    stock: ''        
-  });
-
+    description: '',
+    stock: ''
+});
   useEffect(() => {
     if (userInfo) {
       fetchCycles();
@@ -79,7 +79,7 @@ function AdminDashboard() {
       } else { 
         alert('Error adding cycle: ' + (data.error || 'Unknown error'));
       }
-      setFormData({ brand: '', model: '', price: '', imageUrl: '', description: '', stock: '' }); 
+      setFormData({ brand: '', model: '', marketPrice: '', ourPrice: '', imageUrl: '', description: '', stock: '' });
       fetchCycles();
     })
     .catch(err => alert('Error adding cycle. Check console for details.')); 
@@ -150,7 +150,8 @@ function AdminDashboard() {
         <h2>Add a New Cycle</h2>
         <input type="text" name="brand" value={formData.brand} onChange={handleChange} placeholder="Brand" required />
         <input type="text" name="model" value={formData.model} onChange={handleChange} placeholder="Model" required />
-        <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="Price" required />
+        <input type="number" name="marketPrice" value={formData.marketPrice} onChange={handleChange} placeholder="Market Price (MRP)" required />
+<input type="number" name="ourPrice" value={formData.ourPrice} onChange={handleChange} placeholder="Our Selling Price" required />
         <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
         {/* NEW: Description Field */}
         <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required rows="4"></textarea>

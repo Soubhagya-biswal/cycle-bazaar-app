@@ -30,12 +30,13 @@ const getAdminCycles = asyncHandler(async (req, res) => {
     res.json(cycles);
 });
 const addCycle = asyncHandler(async (req, res) => {
-    const { brand, model, price, imageUrl, description, stock } = req.body;
+    const { brand, model, marketPrice, ourPrice, imageUrl, description, stock } = req.body;
 
     const newCycle = new Cycle({
         brand,
         model,
-        price: Number(price),
+        marketPrice: Number(marketPrice),
+        ourPrice: Number(ourPrice),
         imageUrl,
         description,
         stock: Number(stock),
@@ -62,22 +63,21 @@ const getCycleById = asyncHandler(async (req, res) => {
 
 
 const updateCycle = asyncHandler(async (req, res) => {
-    const { brand, model, price, imageUrl, description, stock } = req.body;
-
+    const { brand, model, marketPrice, ourPrice, imageUrl, description, stock } = req.body;
     const cycle = await Cycle.findById(req.params.id);
 
     if (cycle) {
         const oldStock = cycle.stock;
-        const oldPrice = cycle.price; 
-        const newPrice = Number(price);
+        const oldPrice = cycle.ourPrice; 
+        const newPrice = Number(ourPrice); 
 
         cycle.brand = brand || cycle.brand;
         cycle.model = model || cycle.model;
-        cycle.price = newPrice || cycle.price;
+        cycle.marketPrice = Number(marketPrice) || cycle.marketPrice; 
+        cycle.ourPrice = newPrice || cycle.ourPrice; 
         cycle.imageUrl = imageUrl || cycle.imageUrl;
         cycle.description = description || cycle.description;
         cycle.stock = Number(stock);
-
         const updatedCycle = await cycle.save();
 
         

@@ -1,24 +1,25 @@
 // client/src/components/EditCycle.js
 
-import React, { useState, useEffect, useContext } from 'react'; // useContext import added
+import React, { useState, useEffect, useContext } from 'react'; 
 import { useParams, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext'; // AuthContext import added
+import { AuthContext } from '../context/AuthContext'; 
 
 function EditCycle() {
-  const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    price: '',
-    imageUrl: '',
-    description: '', // NEW: Add description to form data
-    stock: ''        // NEW: Add stock to form data
+  const [formData, setFormData] = useState({
+    brand: '',
+    model: '',
+    marketPrice: '', 
+    ourPrice: '',    
+    imageUrl: '',
+    description: '', 
+    stock: ''        
   });
   const params = useParams();
   const navigate = useNavigate();
-  const { userInfo } = useContext(AuthContext); // Get userInfo from AuthContext
+  const { userInfo } = useContext(AuthContext); 
 
   useEffect(() => {
-    // Fetch cycle details when component loads or ID changes
+    
     const fetchCycleDetails = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/${params.id}`);
@@ -26,21 +27,21 @@ function EditCycle() {
           throw new Error('Failed to fetch cycle details');
         }
         const data = await res.json();
-        // Set form data with fetched details (including new description and stock)
+        
         setFormData(data);
       } catch (err) {
         console.error('Error fetching cycle:', err);
-        alert('Error fetching cycle details.'); // Inform user
-        navigate('/admin'); // Redirect back if fetch fails
+        alert('Error fetching cycle details.'); 
+        navigate('/admin'); 
       }
     };
 
-    if (userInfo && userInfo.isAdmin) { // Only fetch if admin is logged in
+    if (userInfo && userInfo.isAdmin) { 
       fetchCycleDetails();
     } else {
-      navigate('/login'); // Redirect to login if not admin
+      navigate('/login'); 
     }
-  }, [params.id, navigate, userInfo]); // Add navigate and userInfo to dependencies
+  }, [params.id, navigate, userInfo]); 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,25 +50,25 @@ function EditCycle() {
   const handleSubmit = (e) => {
     e.preventDefault();
     fetch(`${process.env.REACT_APP_API_BASE_URL}/cycles/update/${params.id}`, {
-      method: 'PUT', // NEW: Changed from POST to PUT (as per backend route change)
+      method: 'PUT', 
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${userInfo.token}`, // NEW: Add Authorization header
+        Authorization: `Bearer ${userInfo.token}`, 
       },
       body: JSON.stringify(formData),
     })
     .then(res => {
-      if (res.ok) { // Check if response status is 200-299
+      if (res.ok) {
         return res.json();
       } else {
         throw new Error('Failed to update cycle: ' + res.statusText);
       }
     })
     .then(data => {
-      alert(data.message || 'Cycle updated successfully!'); // Use data.message from backend
-      navigate('/admin'); // Redirect to Admin dashboard
+      alert(data.message || 'Cycle updated successfully!'); 
+      navigate('/admin'); 
     })
-    .catch(err => alert('Error updating cycle: ' + err.message)); // More specific error
+    .catch(err => alert('Error updating cycle: ' + err.message)); 
   };
 
   return (
@@ -76,11 +77,12 @@ function EditCycle() {
         <h2>Edit Cycle</h2>
         <input type="text" name="brand" value={formData.brand} onChange={handleChange} placeholder="Brand" required />
         <input type="text" name="model" value={formData.model} onChange={handleChange} placeholder="Model" required />
-        <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="Price" required />
+<input type="number" name="marketPrice" value={formData.marketPrice} onChange={handleChange} placeholder="Market Price (MRP)" required />
+<input type="number" name="ourPrice" value={formData.ourPrice} onChange={handleChange} placeholder="Our Selling Price" required />
         <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
-        {/* NEW: Description Field */}
+        
         <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required rows="4"></textarea>
-        {/* NEW: Stock Field */}
+        
         <input type="number" name="stock" value={formData.stock} onChange={handleChange} placeholder="Stock" required min="0" />
         <button type="submit">Update Cycle</button>
       </form>
