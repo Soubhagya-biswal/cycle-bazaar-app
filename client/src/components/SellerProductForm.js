@@ -1,38 +1,38 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Form, Button, Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext'; // To get userInfo and token
+import { AuthContext } from '../context/AuthContext';
 
 function SellerProductForm() {
-    const { id: productId } = useParams(); 
+    const { id: productId } = useParams();
     const navigate = useNavigate();
     const { userInfo } = useContext(AuthContext);
 
+    // Step 1: Naye state add kiye
     const [brand, setBrand] = useState('');
     const [model, setModel] = useState('');
     const [marketPrice, setMarketPrice] = useState(0);
-const [ourPrice, setOurPrice] = useState(0);
+    const [ourPrice, setOurPrice] = useState(0);
+    const [stock, setStock] = useState(0);
     const [imageUrl, setImageUrl] = useState('');
     const [description, setDescription] = useState('');
-    const [variants, setVariants] = useState([]); 
-    
+    const [variants, setVariants] = useState([]);
+
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [message, setMessage] = useState(''); // For success messages
+    const [message, setMessage] = useState('');
 
-    const isEditMode = Boolean(productId); // Check karein ki edit mode hai ya create mode
+    const isEditMode = Boolean(productId);
 
-    // Redirect if not logged in or not a seller
     useEffect(() => {
         if (!userInfo || !userInfo.isSeller) {
             navigate('/login');
         }
     }, [userInfo, navigate]);
 
-    // Fetch product details if in edit mode
     useEffect(() => {
-        if (isEditMode && userInfo) { // Only fetch if in edit mode and user is logged in
+        if (isEditMode && userInfo) {
             const fetchProduct = async () => {
                 setLoading(true);
                 setError('');
@@ -48,15 +48,15 @@ const [ourPrice, setOurPrice] = useState(0);
                         throw new Error(data.message || 'Failed to fetch product details');
                     }
 
-                    
+                    // Step 2: Edit mode mein naye state set kiye
                     setBrand(data.brand);
                     setModel(data.model);
                     setMarketPrice(data.marketPrice);
-setOurPrice(data.ourPrice);
+                    setOurPrice(data.ourPrice);
+                    setStock(data.stock || 0);
                     setImageUrl(data.imageUrl);
                     setDescription(data.description);
-                    setVariants(data.variants || []); 
-                    
+                    setVariants(data.variants || []);
 
                 } catch (err) {
                     setError(err.message || 'Error loading product for editing.');
@@ -67,7 +67,7 @@ setOurPrice(data.ourPrice);
             };
             fetchProduct();
         }
-    }, [isEditMode, productId, userInfo]); 
+    }, [isEditMode, productId, userInfo]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -75,8 +75,9 @@ setOurPrice(data.ourPrice);
         setError('');
         setMessage('');
 
-       
-        const productData = { brand, model, marketPrice, ourPrice, imageUrl, description, variants };
+        // Step 3: Backend ko bhejne waale data mein naye fields add kiye
+        const productData = { brand, model, marketPrice, ourPrice, stock, imageUrl, description, variants };
+        
         let url = `${process.env.REACT_APP_API_BASE_URL}/api/seller/products`;
         let method = 'POST';
 
@@ -102,7 +103,6 @@ setOurPrice(data.ourPrice);
             }
 
             setMessage(data.message || `Product ${isEditMode ? 'updated' : 'created'} successfully!`);
-            // Optional: Redirect to seller's product list after success
             navigate('/seller/products');
         } catch (err) {
             setError(err.message || `Error ${isEditMode ? 'updating' : 'creating'} product.`);
@@ -144,29 +144,42 @@ setOurPrice(data.ourPrice);
                             />
                         </Form.Group>
 
+                        {/* Step 4: Naye input fields add kiye */}
                         <Form.Group controlId="marketPrice" className="mb-3">
-    <Form.Label>Market Price (MRP)</Form.Label>
-    <Form.Control
-        type="number"
-        placeholder="Enter MRP"
-        value={marketPrice}
-        onChange={(e) => setMarketPrice(Number(e.target.value))}
-        required
-        min="0"
-    />
-</Form.Group>
+                            <Form.Label>Market Price (MRP)</Form.Label>
+                            <Form.Control
+                                type="number"
+                                placeholder="Enter MRP"
+                                value={marketPrice}
+                                onChange={(e) => setMarketPrice(Number(e.target.value))}
+                                required
+                                min="0"
+                            />
+                        </Form.Group>
 
-<Form.Group controlId="ourPrice" className="mb-3">
-    <Form.Label>Our Selling Price</Form.Label>
-    <Form.Control
-        type="number"
-        placeholder="Enter selling price"
-        value={ourPrice}
-        onChange={(e) => setOurPrice(Number(e.target.value))}
-        required
-        min="0"
-    />
-</Form.Group>
+                        <Form.Group controlId="ourPrice" className="mb-3">
+                            <Form.Label>Our Selling Price</Form.Label>
+                            <Form.Control
+                                type="number"
+                                placeholder="Enter selling price"
+                                value={ourPrice}
+                                onChange={(e) => setOurPrice(Number(e.target.value))}
+                                required
+                                min="0"
+                            />
+                        </Form.Group>
+
+                        <Form.Group controlId="stock" className="mb-3">
+                            <Form.Label>Total Stock</Form.Label>
+                            <Form.Control
+                                type="number"
+                                placeholder="Enter total stock"
+                                value={stock}
+                                onChange={(e) => setStock(Number(e.target.value))}
+                                required
+                                min="0"
+                            />
+                        </Form.Group>
 
                         <Form.Group controlId="imageUrl" className="mb-3">
                             <Form.Label>Image URL</Form.Label>
@@ -175,7 +188,6 @@ setOurPrice(data.ourPrice);
                                 placeholder="Enter image URL"
                                 value={imageUrl}
                                 onChange={(e) => setImageUrl(e.target.value)}
-                                // required is false as it has a default in backend
                             />
                         </Form.Group>
 
@@ -190,16 +202,11 @@ setOurPrice(data.ourPrice);
                                 required
                             />
                         </Form.Group>
-
+                        
+                        {/* Variants section remains the same */}
                         <h4 className="mt-4">Product Variants</h4>
-                        <p className="text-muted">Define different colors, sizes, or types for this product.</p>
-
-                        {variants.length === 0 && (
-                            <Alert variant="info">No variants added yet. Click "Add Variant" to begin.</Alert>
-                        )}
-
                         {variants.map((variant, index) => (
-                            <div key={index} className="mb-3 p-3 border rounded"> {/* Unique key for each variant */}
+                            <div key={index} className="mb-3 p-3 border rounded">
                                 <Row className="mb-2 align-items-end">
                                     <Col md={5}>
                                         <Form.Group controlId={`variantColor${index}`}>
@@ -246,7 +253,6 @@ setOurPrice(data.ourPrice);
                                         </Button>
                                     </Col>
                                 </Row>
-
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group controlId={`variantAdditionalPrice${index}`}>
