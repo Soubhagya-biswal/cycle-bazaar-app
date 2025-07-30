@@ -35,8 +35,9 @@ const addCycle = asyncHandler(async (req, res) => {
     const newCycle = new Cycle({
         brand,
         model,
-        marketPrice: Number(marketPrice),
-        ourPrice: Number(ourPrice),
+        marketPrice: marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : 0,
+        ourPrice: ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : 0,
+        variants: variants || [], 
         imageUrl,
         description,
         stock: Number(stock),
@@ -73,11 +74,12 @@ const updateCycle = asyncHandler(async (req, res) => {
 
         cycle.brand = brand || cycle.brand;
         cycle.model = model || cycle.model;
-        cycle.marketPrice = Number(marketPrice) || cycle.marketPrice; 
-        cycle.ourPrice = newPrice || cycle.ourPrice; 
+        cycle.marketPrice = marketPrice !== undefined && marketPrice !== null && marketPrice !== '' ? Number(marketPrice) : cycle.marketPrice; 
+        cycle.ourPrice = ourPrice !== undefined && ourPrice !== null && ourPrice !== '' ? Number(ourPrice) : cycle.ourPrice; 
         cycle.imageUrl = imageUrl || cycle.imageUrl;
         cycle.description = description || cycle.description;
         cycle.stock = Number(stock);
+        cycle.variants = variants || [];
         const updatedCycle = await cycle.save();
 
         
