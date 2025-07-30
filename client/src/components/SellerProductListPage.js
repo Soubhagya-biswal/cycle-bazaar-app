@@ -129,7 +129,7 @@ function SellerProductListPage() {
                                 <td>{product._id}</td>
                                 <td>{product.brand}</td>
                                 <td>{product.model}</td>
-                                <td>₹{product.price.toFixed(2)}</td>
+                                <td>₹{!isNaN(product.price) ? Number(product.price).toFixed(2) : 'N/A'}</td>
                                 <td>{product.stock}</td>
                                 <td>
                                     <LinkContainer to={`/seller/product/${product._id}/edit`}>
