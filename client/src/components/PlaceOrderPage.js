@@ -40,7 +40,7 @@ function PlaceOrderPage() {
                 },
                 body: JSON.stringify({
                     orderItems: cartItems.map(item => {
-                        const basePrice = item.cycleId.price;
+                        const basePrice = item.cycleId.ourPrice;
                         const chosenVariant = item.variantId && item.cycleId.variants 
                             ? item.cycleId.variants.find(v => v._id === item.variantId) 
                             : null;
@@ -112,7 +112,7 @@ function PlaceOrderPage() {
                                                     <Link to={`/cycle/${item.cycleId._id}`}>{item.cycleId.brand} {item.cycleId.model}</Link>
                                                 </Col>
                                                 <Col md={4}>
-                                                    {item.quantity} x ₹{item.cycleId.price} = ₹{(item.quantity * item.cycleId.price).toFixed(2)}
+                                                    {item.quantity} x ₹{item.cycleId.ourPrice} = ₹{(item.quantity * item.cycleId.ourPrice).toFixed(2)}
                                                 </Col>
                                             </Row>
                                         </ListGroup.Item>
