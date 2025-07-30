@@ -159,6 +159,17 @@ const getAllActivities = asyncHandler(async (req, res) => {
     
     res.json(activities);
 });
+const deleteActivity = asyncHandler(async (req, res) => {
+    const activity = await Activity.findById(req.params.id);
+
+    if (activity) {
+        await activity.deleteOne();
+        res.json({ message: 'Activity log removed' });
+    } else {
+        res.status(404);
+        throw new Error('Activity log not found');
+    }
+});
 export {
   getAllUsers,
   deleteUser,
@@ -170,5 +181,6 @@ export {
   updateUserAddress,
     getMyReviews,
     logoutUser,
-  getAllActivities,
+    getAllActivities,
+  deleteActivity,
 };

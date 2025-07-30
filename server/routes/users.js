@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import passport from 'passport';
 import sendEmail from '../utils/sendEmail.js';
 import { protect, admin } from '../middleware/authMiddleware.js'; 
-import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews, logoutUser, getAllActivities  } from '../controllers/userController.js';
+import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews, logoutUser, getAllActivities, deleteActivity  } from '../controllers/userController.js';
 import logActivity from '../services/logActivity.js';
 const router = express.Router();
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -24,7 +24,7 @@ router.get(
 );
 router.route('/').get(protect, admin, getAllUsers);
 router.route('/activities').get(protect, admin, getAllActivities);
-
+router.route('/activities/:id').delete(protect, admin, deleteActivity);
 router.route('/register').post(async (req, res) => {
     const { name, email, password } = req.body;
     try {
