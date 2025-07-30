@@ -31,7 +31,10 @@ const getAdminCycles = asyncHandler(async (req, res) => {
 });
 const addCycle = asyncHandler(async (req, res) => {
     const { brand, model, marketPrice, ourPrice, imageUrl, description, stock } = req.body;
-
+         console.log('--- Inside addCycle ---');
+    console.log('Received req.body:', req.body);
+    console.log('Parsed marketPrice:', marketPrice);
+    console.log('Parsed ourPrice:', ourPrice);
     const newCycle = new Cycle({
         brand,
         model,
@@ -47,6 +50,8 @@ const addCycle = asyncHandler(async (req, res) => {
     });
 
     const createdCycle = await newCycle.save();
+    console.log('Saved Cycle Data:', createdCycle); // Dekhne ke liye kya save hua
+    console.log('--- Exiting addCycle ---');
     res.status(201).json({ message: 'New Cycle added successfully!', cycle: createdCycle });
 });
 
@@ -70,6 +75,10 @@ const updateCycle = asyncHandler(async (req, res) => {
     if (cycle) {
         const oldStock = cycle.stock;
         const oldPrice = cycle.ourPrice; 
+        console.log('--- Inside updateCycle ---');
+        console.log('Received req.body:', req.body);
+        console.log('Parsed marketPrice:', marketPrice);
+        console.log('Parsed ourPrice:', ourPrice);
         const newPrice = Number(ourPrice); 
 
         cycle.brand = brand || cycle.brand;
