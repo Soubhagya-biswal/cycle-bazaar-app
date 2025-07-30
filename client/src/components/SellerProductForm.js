@@ -10,7 +10,8 @@ function SellerProductForm() {
 
     const [brand, setBrand] = useState('');
     const [model, setModel] = useState('');
-    const [price, setPrice] = useState(0);
+    const [marketPrice, setMarketPrice] = useState(0);
+const [ourPrice, setOurPrice] = useState(0);
     const [imageUrl, setImageUrl] = useState('');
     const [description, setDescription] = useState('');
     const [variants, setVariants] = useState([]); 
@@ -50,7 +51,8 @@ function SellerProductForm() {
                     
                     setBrand(data.brand);
                     setModel(data.model);
-                    setPrice(data.price);
+                    setMarketPrice(data.marketPrice);
+setOurPrice(data.ourPrice);
                     setImageUrl(data.imageUrl);
                     setDescription(data.description);
                     setVariants(data.variants || []); 
@@ -65,7 +67,7 @@ function SellerProductForm() {
             };
             fetchProduct();
         }
-    }, [isEditMode, productId, userInfo]); // Depend on these values
+    }, [isEditMode, productId, userInfo]); 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -74,7 +76,7 @@ function SellerProductForm() {
         setMessage('');
 
        
-        const productData = { brand, model, price, imageUrl, description, variants };
+        const productData = { brand, model, marketPrice, ourPrice, imageUrl, description, variants };
         let url = `${process.env.REACT_APP_API_BASE_URL}/api/seller/products`;
         let method = 'POST';
 
@@ -142,17 +144,29 @@ function SellerProductForm() {
                             />
                         </Form.Group>
 
-                        <Form.Group controlId="price" className="mb-3">
-                            <Form.Label>Price</Form.Label>
-                            <Form.Control
-                                type="number"
-                                placeholder="Enter price"
-                                value={price}
-                                onChange={(e) => setPrice(Number(e.target.value))}
-                                required
-                                min="0"
-                            />
-                        </Form.Group>
+                        <Form.Group controlId="marketPrice" className="mb-3">
+    <Form.Label>Market Price (MRP)</Form.Label>
+    <Form.Control
+        type="number"
+        placeholder="Enter MRP"
+        value={marketPrice}
+        onChange={(e) => setMarketPrice(Number(e.target.value))}
+        required
+        min="0"
+    />
+</Form.Group>
+
+<Form.Group controlId="ourPrice" className="mb-3">
+    <Form.Label>Our Selling Price</Form.Label>
+    <Form.Control
+        type="number"
+        placeholder="Enter selling price"
+        value={ourPrice}
+        onChange={(e) => setOurPrice(Number(e.target.value))}
+        required
+        min="0"
+    />
+</Form.Group>
 
                         <Form.Group controlId="imageUrl" className="mb-3">
                             <Form.Label>Image URL</Form.Label>
