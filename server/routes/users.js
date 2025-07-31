@@ -4,22 +4,7 @@ import jwt from 'jsonwebtoken';
 import passport from 'passport';
 import sendEmail from '../utils/sendEmail.js';
 import { protect, admin } from '../middleware/authMiddleware.js'; 
-import { 
-    getAllUsers, 
-    deleteUser, 
-    toggleWishlist, 
-    getWishlist, 
-    getUserProfile, 
-    updateUserProfile, 
-    getUserAddress, 
-    updateUserAddress, 
-    getMyReviews, 
-    logoutUser, 
-    getAllActivities, 
-    deleteActivity,
-    generateTwoFactorSecret, 
-    enableTwoFactorAuth      
-} from '../controllers/userController.js';
+import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews, logoutUser, getAllActivities, deleteActivity  } from '../controllers/userController.js';
 import logActivity from '../services/logActivity.js';
 import rateLimit from 'express-rate-limit';
 const router = express.Router();
@@ -123,8 +108,6 @@ router.route('/login').post(authLimiter, async (req, res) => {
     }
 });
 router.route('/logout').post(protect, logoutUser);
-router.route('/2fa/generate').post(protect, generateTwoFactorSecret);
-router.route('/2fa/enable').post(protect, enableTwoFactorAuth);
 
 router.route('/apply-seller').post(protect, async (req, res) => {
     

@@ -38,14 +38,6 @@ shippingAddress: {
         phoneNumber: { type: String },
         businessAddress: { type: String },
         gstin: { type: String } 
-    },
-    isTwoFactorEnabled: {
-        type: Boolean,
-        default: false
-    },
-    twoFactorSecret: {
-        
-        type: String 
     }
     
 }, {
