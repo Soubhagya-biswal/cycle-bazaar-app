@@ -90,7 +90,7 @@ const updateCycle = asyncHandler(async (req, res) => {
             const emailMessage = `
                 <p>Hi there,</p>
                 <p>Good news! The cycle you were waiting for, <strong>${updatedCycle.brand} ${updatedCycle.model}</strong>, is now back in stock.</p>
-                <p><a href="http://localhost:3000/cycle/${updatedCycle._id}">Click here to buy it now!</a></p>
+                <p><a href="https://cycle-bazaar-client.onrender.com/cycle/${updatedCycle._id}">Click here to buy it now!</a></p>
                 <p>Hurry, stock is limited!</p>
             `;
 
@@ -121,7 +121,7 @@ const updateCycle = asyncHandler(async (req, res) => {
             const emailMessage = (userName) => `
                 <p>Hi ${userName},</p>
                 <p>Great news! The price for the cycle you were watching, <strong>${updatedCycle.brand} ${updatedCycle.model}</strong>, has dropped from ₹${oldPrice} to <strong>₹${newPrice}</strong>.</p>
-                <p><a href="http://localhost:3000/cycle/${updatedCycle._id}">Click here to check it out!</a></p>
+                <p><a href="https://cycle-bazaar-client.onrender.com/cycle/${updatedCycle._id}">Click here to check it out!</a></p>
             `;
 
             for (const user of updatedCycle.priceDropSubscribers) {

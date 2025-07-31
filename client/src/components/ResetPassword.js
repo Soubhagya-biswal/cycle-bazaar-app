@@ -65,10 +65,10 @@ function ResetPassword() {
 </Form.Group>
                     <Form.Group className="mb-3" controlId="confirmPassword">
     <Form.Label>Confirm New Password</Form.Label>
-    {/* 👇️ आँख टॉगल के लिए नया कोड यहाँ से शुरू होता है 👇️ */}
+    
     <div className="input-group">
         <Form.Control
-            type={showConfirmPassword ? 'text' : 'password'} // यह डायनामिक रूप से इनपुट टाइप को बदलता है
+            type={showConfirmPassword ? 'text' : 'password'} 
             placeholder="Confirm new password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -81,7 +81,7 @@ function ResetPassword() {
             <i className={showConfirmPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'}></i>
         </Button>
     </div>
-    {/* 👆️ आँख टॉगल के लिए नया कोड यहाँ समाप्त होता है 👆️ */}
+    
 </Form.Group>
                     <Button type="submit" variant="primary" className="w-100 mt-3">Update Password</Button>
                 </Form>
