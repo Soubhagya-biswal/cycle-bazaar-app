@@ -21,9 +21,16 @@ function Login() {
             });
             const data = await res.json();
             if (!res.ok) {
-                setError(data || 'Login failed');
-                return;
-            }
+    
+    if (res.status === 429) {
+        
+        setError(data.message || 'Too many login attempts. Please wait 2 minutes before trying again.');
+    } else {
+        
+        setError(data || 'Login failed');
+    }
+    return;
+}
             login(data); 
             navigate('/'); 
         } catch (err) {
