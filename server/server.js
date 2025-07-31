@@ -1,5 +1,6 @@
 import './config/dotenv-config.js';
 import express from 'express';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -38,7 +39,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
+app.use(helmet());
 app.use(express.json());
 app.use(passport.initialize());
 // MongoDB Connection

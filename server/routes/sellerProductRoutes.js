@@ -1,6 +1,7 @@
 import express from 'express';
 import asyncHandler from 'express-async-handler';
-import { body, validationResult } from 'express-validator'; // <-- Step 1: Import kiya
+import { validationResult } from 'express-validator'; 
+import { productValidationRules } from '../validators/productValidator.js'; 
 import Cycle from '../models/cycle.model.js';
 import { protect, seller } from '../middleware/authMiddleware.js';
 
@@ -27,25 +28,16 @@ router.get('/:id', protect, seller, asyncHandler(async (req, res) => {
     }
 }));
 
-// --- Step 2: Validation ke rules banaye ---
-const productValidationRules = [
-    body('brand').trim().not().isEmpty().withMessage('Brand is required.'),
-    body('model').trim().not().isEmpty().withMessage('Model is required.'),
-    body('marketPrice').isFloat({ min: 0 }).withMessage('Market Price must be a positive number.'),
-    body('ourPrice').isFloat({ min: 0 }).withMessage('Our Price must be a positive number.'),
-    body('stock').isInt({ min: 0 }).withMessage('Stock must be a whole number (0 or more).'),
-    body('description').trim().not().isEmpty().withMessage('Description is required.'),
-    body('imageUrl').optional({ checkFalsy: true }).isURL().withMessage('Image URL must be a valid URL.'),
-];
+
 
 
 router.post(
     '/',
     protect,
     seller,
-    productValidationRules, // <-- Step 3: Rules ko route mein lagaya
+    productValidationRules, 
     asyncHandler(async (req, res) => {
-        // --- Step 4: Validation ka result check kiya ---
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -78,9 +70,9 @@ router.put(
     '/:id',
     protect,
     seller,
-    productValidationRules, // <-- Step 3 (Again): Rules ko update route mein bhi lagaya
+    productValidationRules, 
     asyncHandler(async (req, res) => {
-        // --- Step 4 (Again): Validation ka result check kiya ---
+        
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
