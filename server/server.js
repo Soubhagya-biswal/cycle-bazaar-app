@@ -21,7 +21,7 @@ import sellerProductRoutes from './routes/sellerProductRoutes.js';
 import deliveryRoutes from './routes/deliveryRoutes.js';
 import couponRoutes from './routes/couponRoutes.js';
 const app = express();
-
+app.set('trust proxy', 1);
 const port = process.env.PORT || 5000;
 console.log(`Server attempting to start on port: ${port}`); 
 
