@@ -77,8 +77,8 @@ function EditCycle() {
         <h2>Edit Cycle</h2>
         <input type="text" name="brand" value={formData.brand} onChange={handleChange} placeholder="Brand" required />
         <input type="text" name="model" value={formData.model} onChange={handleChange} placeholder="Model" required />
-<input type="number" name="marketPrice" value={formData.marketPrice} onChange={handleChange} placeholder="Market Price (MRP)" required min="0" />
-<input type="number" name="ourPrice" value={formData.ourPrice} onChange={handleChange} placeholder="Our Selling Price" required min="0" />
+<input type="number" name="marketPrice" value={formData.marketPrice} onChange={handleChange} placeholder="Market Price (MRP)" required min="1" />
+<input type="number" name="ourPrice" value={formData.ourPrice} onChange={handleChange} placeholder="Our Selling Price" required min="1" />
         <input type="text" name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URL" required />
         
         <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required rows="4"></textarea>
