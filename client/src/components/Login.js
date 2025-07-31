@@ -12,31 +12,38 @@ function Login() {
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+    e.preventDefault();
+    setError(''); // Clear previous errors
+
+    try {
+        const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/users/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        
+        if (!res.ok) {
+            
+            if (res.status === 429) {
+                const errorMessage = await res.text(); 
+                setError(errorMessage || 'Too many attempts. Please wait 2 minutes.');
+                return;
+            }
+            
             const data = await res.json();
-            if (!res.ok) {
-    
-    if (res.status === 429) {
-        
-        setError(data.message || 'Too many login attempts. Please wait 2 minutes before trying again.');
-    } else {
-        
-        setError(data || 'Login failed');
-    }
-    return;
-}
-            login(data); 
-            navigate('/'); 
-        } catch (err) {
-            setError('Server error');
+            setError(data.message || data || 'Login failed');
+            return;
         }
-    };
+
+        const data = await res.json();
+        login(data);
+        navigate('/');
+
+    } catch (err) {
+        setError('Server error. Please try again later.');
+    }
+};
 
     // Google login ke liye backend URL
     const googleLoginUrl = `${process.env.REACT_APP_API_BASE_URL}/api/users/auth/google`;
