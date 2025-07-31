@@ -72,32 +72,28 @@ router.post('/', protect, seller, asyncHandler(async (req, res) => {
 }));
 
 router.put('/:id', protect, seller, asyncHandler(async (req, res) => {
-    const { brand, model, price, imageUrl, description, variants } = req.body;
+    
+    const { brand, model, marketPrice, ourPrice, stock, imageUrl, description, variants } = req.body;
     const cycleId = req.params.id;
 
     const cycle = await Cycle.findById(cycleId);
 
     if (cycle) {
-        
+        // Authorisation check
         if (cycle.seller.toString() !== req.user._id.toString()) {
-            res.status(401); 
+            res.status(401);
             throw new Error('You are not authorized to update this product');
         }
 
+        
         cycle.brand = brand || cycle.brand;
         cycle.model = model || cycle.model;
-        cycle.price = price || cycle.price;
+        cycle.marketPrice = marketPrice === undefined ? cycle.marketPrice : marketPrice;
+        cycle.ourPrice = ourPrice === undefined ? cycle.ourPrice : ourPrice;
+        cycle.stock = stock === undefined ? cycle.stock : stock;
         cycle.imageUrl = imageUrl || cycle.imageUrl;
         cycle.description = description || cycle.description;
-        if (variants && Array.isArray(variants)) {
-            cycle.variants = variants;
-            
-            cycle.stock = variants.reduce((acc, variant) => acc + (variant.variantStock || 0), 0);
-        } else {
-            
-            res.status(400);
-            throw new Error('Variants must be provided as a valid array.');
-        }
+        cycle.variants = variants || cycle.variants;
 
         const updatedCycle = await cycle.save();
         res.json(updatedCycle);
