@@ -6,7 +6,15 @@ import sendEmail from '../utils/sendEmail.js';
 import { protect, admin } from '../middleware/authMiddleware.js'; 
 import { getAllUsers, deleteUser, toggleWishlist, getWishlist, getUserProfile, updateUserProfile, getUserAddress, updateUserAddress, getMyReviews, logoutUser, getAllActivities, deleteActivity  } from '../controllers/userController.js';
 import logActivity from '../services/logActivity.js';
+import rateLimit from 'express-rate-limit';
 const router = express.Router();
+const authLimiter = rateLimit({
+    windowMs: 2 * 60 * 1000,
+    max: 3, 
+    message: 'Too many requests from this IP, please try again after 2 minutes',
+    standardHeaders: true, 
+    legacyHeaders: false, 
+});
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 
@@ -25,7 +33,7 @@ router.get(
 router.route('/').get(protect, admin, getAllUsers);
 router.route('/activities').get(protect, admin, getAllActivities);
 router.route('/activities/:id').delete(protect, admin, deleteActivity);
-router.route('/register').post(async (req, res) => {
+router.route('/register').post(authLimiter, async (req, res) => {
     const { name, email, password } = req.body;
     try {
         const userExists = await User.findOne({ email });
@@ -59,7 +67,7 @@ router.route('/verify/:token').get(async (req, res) => {
 });
 
 // Login User
-router.route('/login').post(async (req, res) => {
+router.route('/login').post(authLimiter, async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
