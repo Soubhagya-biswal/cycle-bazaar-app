@@ -3,7 +3,8 @@ import User from '../models/user.model.js';
 import Cycle from '../models/cycle.model.js';
 import logActivity from '../services/logActivity.js';
 import Activity from '../models/activity.model.js';
-
+import speakeasy from 'speakeasy'; 
+import qrcode from 'qrcode'; 
 const getAllUsers = asyncHandler(async (req, res) => {
   // Find all users
   const users = await User.find({});
@@ -170,6 +171,57 @@ const deleteActivity = asyncHandler(async (req, res) => {
         throw new Error('Activity log not found');
     }
 });
+const generateTwoFactorSecret = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (user.isTwoFactorEnabled) {
+        res.status(400);
+        throw new Error('2FA is already enabled for this account.');
+    }
+
+    const secret = speakeasy.generateSecret({
+        name: `CycleBazaar (${user.email})`
+    });
+
+    user.twoFactorSecret = secret.base32; // Encoded secret ko save kiya
+    await user.save();
+
+    // Secret se QR code banaya
+    qrcode.toDataURL(secret.otpauth_url, (err, data_url) => {
+        if (err) {
+            console.error('Error generating QR code', err);
+            res.status(500);
+            throw new Error('Could not generate QR code for 2FA setup.');
+        }
+        res.json({ qrCodeUrl: data_url });
+    });
+});
+
+// Function 2: OTP verify karke 2FA ko enable karne ke liye
+const enableTwoFactorAuth = asyncHandler(async (req, res) => {
+    const { token } = req.body; // User ke app se aaya hua 6-digit OTP
+    const user = await User.findById(req.user._id);
+
+    if (!user.twoFactorSecret) {
+        res.status(400);
+        throw new Error('2FA secret not found. Please generate a QR code first.');
+    }
+
+    const verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: token,
+    });
+
+    if (verified) {
+        user.isTwoFactorEnabled = true;
+        await user.save();
+        res.json({ message: '2FA has been enabled successfully!' });
+    } else {
+        res.status(400);
+        throw new Error('Invalid OTP. Please try again.');
+    }
+});
 export {
   getAllUsers,
   deleteUser,
@@ -182,5 +234,7 @@ export {
     getMyReviews,
     logoutUser,
     getAllActivities,
-  deleteActivity,
+    deleteActivity,
+  generateTwoFactorSecret, 
+  enableTwoFactorAuth 
 };

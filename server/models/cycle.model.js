@@ -43,7 +43,8 @@ ourPrice: {
   seller: {
         type: mongoose.Schema.Types.ObjectId,
         required: true, 
-        ref: 'User', 
+    ref: 'User', 
+        index: true
     },
 description: {
   type: String,
