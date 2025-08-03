@@ -10,12 +10,12 @@ const getAllUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 const deleteUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id); // Find user by ID from URL params
+  const user = await User.findById(req.params.id); 
 
   if (user) {
-    // Prevent admin from deleting themselves
+    
     if (user.isAdmin) {
-      res.status(400); // Bad Request
+      res.status(400); 
       throw new Error('Cannot delete admin user');
     }
 
