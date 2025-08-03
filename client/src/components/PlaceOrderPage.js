@@ -5,7 +5,7 @@ import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 
 function PlaceOrderPage() {
-    // Step 1: Sab kuch CartContext se aa raha hai
+    
     const { 
         cartItems, 
         shippingAddress, 
@@ -21,7 +21,7 @@ function PlaceOrderPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Agar address ya payment method nahi hai to user ko wapas bhejo
+        
         if (!shippingAddress.address) {
             navigate('/shipping');
         } else if (!paymentMethod) {
@@ -29,7 +29,7 @@ function PlaceOrderPage() {
         }
     }, [shippingAddress, paymentMethod, navigate]);
 
-    // Step 2: placeOrderHandler ab context se sahi price bhejega
+    
     const placeOrderHandler = async () => {
         try {
             const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/orders`, {
@@ -50,7 +50,7 @@ function PlaceOrderPage() {
                             cycle: item.cycleId._id,
                             name: `${item.cycleId.brand} ${item.cycleId.model}`,
                             image: item.cycleId.imageUrl,
-                            price: effectivePrice, // Item ki sahi price
+                            price: effectivePrice, 
                             qty: item.quantity,
                             variant: item.variantId,
                         };
@@ -58,8 +58,8 @@ function PlaceOrderPage() {
                     shippingAddress: shippingAddress,
                     paymentMethod: paymentMethod,
                     itemsPrice: subtotal,
-                    taxPrice: 0, // Abhi ke liye 0
-                    shippingPrice: 0, // Abhi ke liye 0
+                    taxPrice: 0, 
+                    shippingPrice: 0, 
                     totalPrice: grandTotal,
                     couponApplied: appliedCoupon ? appliedCoupon.code : 'None',
                     discountAmount: discount,
@@ -123,7 +123,7 @@ function PlaceOrderPage() {
                     </ListGroup>
                 </Col>
                 <Col md={4}>
-                    {/* Step 3: Naya Order Summary Card */}
+                    
                     <Card>
                         <ListGroup variant='flush'>
                             <ListGroup.Item>
